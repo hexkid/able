@@ -6,8 +6,8 @@ This is a Block editor for gForth.
 Almost got called "bled", but I came up with this better name.
 
 I could make gForth work with blocks my making
-the first line in the first screen start with "\\",
-the first line in all other screens start with "\ ".
+the first line in the first screen start with "\\\\" (backslash backslash),
+the first line in all other screens start with "\\ " (backslash space).
 
 To load and interpret the block, just start gForth and issue
 
@@ -29,5 +29,5 @@ to edit your blocks with gForth editor, continue from above with
     i text here      \ insert
     flush            \ write to disk
 
-I don't like gForth editor, so I wrote my own.
+I don't like gForth block editor, so I wrote my own.
 Enjoy :-)

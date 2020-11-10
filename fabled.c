@@ -28,6 +28,7 @@ int loadsource(struct fabledStatus *s) {
             strncpy(s->s[0], tmp, 64);
             strncpy(s->s[1], tmp, 64);
         }
+        updatepageno(s);
         return 1;
     } else {
         for (;;) {
@@ -47,6 +48,7 @@ int loadsource(struct fabledStatus *s) {
                     if (tmp[k] > 0x7e) tmp[k] = ' ';
                 }
                 memcpy(s->s[s->ns - 1], tmp, 1024);
+                updatepageno(s);
             } else {
                 break;
             }
@@ -66,9 +68,31 @@ void freescreens(struct fabledStatus *s) {
 }
 
 void refresh_curpage(struct fabledStatus *s) {
+    updatepageno(s);
     for (int k = 0; k < 16; k++) {
         mvprintw(5+k, 4, "%.64s", s->s[s->current] + 64*k);
     }
+}
+
+int addpage(struct fabledStatus *s) {
+    void *tmp = realloc(s->s, (s->ns + 1) * sizeof *(s->s));
+    if (tmp == NULL) {
+        strcpy(s->msg, "Not enough memory");
+        s->status = 0;
+        return 1;
+    }
+    s->s = tmp;
+    memset(s->s[s->ns], ' ', sizeof *(s->s));
+    char stmp[65];
+    time_t tt = time(0);
+    struct tm t = *gmtime(&tt);
+    sprintf(stmp, "\\ <TITLE>                        "
+                  "                    %04d-%02d-%02d",
+                  t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+    strncpy(s->s[s->ns], stmp, 64);
+    s->ns += 1;
+    updatepageno(s);
+    return 0;
 }
 
 int edit(struct fabledStatus *s) {
@@ -85,9 +109,13 @@ int edit(struct fabledStatus *s) {
     }
     if (ch == KEY_NPAGE) {
         s->current++;
+        if (s->current == s->ns) addpage(s);
         refresh_curpage(s);
     }
-    if (ch == KEY_PPAGE) /*void*/;
+    if (ch == KEY_PPAGE) {
+        if (s->current) s->current--;
+        refresh_curpage(s);
+    }
     if ((ch >> 7) != 0) return 0; // ignore other 'special' keys
     if (ch == '\t') {
         s->status = 1;
@@ -137,9 +165,14 @@ int docmd(struct fabledStatus *s, const char *cmd) {
     return -1;
 }
 
+int updatepageno(struct fabledStatus *s) {
+    mvprintw(3, 4, "Page %d/%d  ", s->current + 1, s->ns ? s->ns : 1);
+    return 0;
+}
+
 int addframe(struct fabledStatus *s) {
     mvprintw(0, 4, "Welcome to fabled - your (FA)ncy (BL)ock (ED)itor for Forth fans");
-    mvprintw(3, 4, "Page %d/%d", s->current + 1, s->ns ? s->ns : 1);
+    updatepageno(s);
     mvprintw(3, 15, "%53s", s->srcname);
     mvaddch(4, 3, '+');          mvaddch(4, 68, '+');
     mvaddch(21, 3, '+');         mvaddch(21, 68, '+');

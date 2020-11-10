@@ -18,5 +18,6 @@ void freescreens(struct fabledStatus *s);
 void refresh_curpage(struct fabledStatus *s);
 int edit(struct fabledStatus *s);
 int docmd(struct fabledStatus *s, const char *cmd);
+int updatepageno(struct fabledStatus *s);
 
 #endif

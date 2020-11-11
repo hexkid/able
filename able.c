@@ -23,27 +23,27 @@ void window_setup(struct ableInfo *s) {
     init_pair(2, COLOR_WHITE, COLOR_GREEN);
     init_pair(3, COLOR_WHITE, COLOR_RED);
 
-    s->wpage = newwin(1, 10, 3, 4);
+    s->wpage = newwin(1, 10, 2, 4);
     wbkgd(s->wpage, COLOR_PAIR(2));
     mvwprintw(s->wpage, 0, 0, "wpage 789012");
 
-    s->wsource = newwin(1, 53, 3, 15);
+    s->wsource = newwin(1, 53, 2, 15);
     wbkgd(s->wsource, COLOR_PAIR(3));
     mvwprintw(s->wsource, 0, 0, "wsource 90123456789012345678901234567890123456789012345");
 
-    s->wedit = newwin(16, 64, 5, 4);
+    s->wedit = newwin(16, 64, 4, 4);
     wbkgd(s->wedit, COLOR_PAIR(1));
     mvwprintw(s->wedit, 0, 0, "wedit 789012345678901234567890123456789012345678901234567890123456");
 
-    s->wcmd = newwin(1, 24, 22, 6);
+    s->wcmd = newwin(1, 24, 21, 6);
     wbkgd(s->wcmd, COLOR_PAIR(2));
     mvwprintw(s->wcmd, 0, 0, "wcmd 678901234567890123456");
 
-    s->wstatus = newwin(1, 40, 22, 31);
+    s->wstatus = newwin(1, 40, 21, 31);
     wbkgd(s->wstatus, COLOR_PAIR(3));
     mvwprintw(s->wstatus, 0, 0, "wstatus 9012345678901234567890123456789012");
 
-    s->winfo = newwin(3, 80, 23, 0);
+    s->winfo = newwin(4, 80, 22, 0);
     wbkgd(s->winfo, COLOR_PAIR(1));
     mvwprintw(s->winfo, 0, 0, "++++++++\n-----\n::::::\nzzzzzzz");
 

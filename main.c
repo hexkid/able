@@ -4,32 +4,49 @@
 #include <string.h>
 #include "able.h"
 
+#if 0
+    unsigned status;       // 0: command -- 1: edit -- 2: quit
+    unsigned editx, edity; // (x, y) for edit area
+    unsigned cmdx, cmdy;   // (x, y) for commad prompt (y is constant)
+    char srcname[81];      // name of blocks file on disk
+    char (*s)[1024];       // screens
+    unsigned ms, ns;       // number of screens: allocated, used
+    unsigned current;      // current screen
+    char msg[81];          // message
+    WINDOW *wpage, *wsource, *wedit;
+    WINDOW *wcmd, *wstatus, *winfo;
+#endif
+
 int main(int argc, char **argv) {
     struct ableInfo s[1] = { 0 };
     strcpy(s->srcname, "blocks.fb");
     if (argc != 1) strcpy(s->srcname, argv[1]);
 
-    if (loadsource(s)) {
-        fprintf(stderr, "Error: %s\n", s->msg);
-        exit(EXIT_FAILURE);
-    }
-
     // start ncurses
     initscr();
     cbreak();
     noecho();
-    keypad(stdscr, TRUE);
     start_color();
 
     mvprintw(0, 3, "Welcome to ABLE - (A)nother (BL)ock (E)ditor - v0.1.1 (2020-11-11)");
+    loadsource(s);
+    windowscreate(s);
 
-    window_setup(s);
-    refreshall(s);
-    getch();
+    do {
+        refreshall(s);
+        if (s->status == 0) wmove(s->wcmd, s->cmdy, s->cmdx);
+        else                wmove(s->wedit, s->edity, s->editx);
+        processkey(s, getch());
+        if ((s->status < 2) && *s->msg) {
+            wscrl(s->winfo, -1);
+            mvwprintw(s->winfo, 0, 0, "%-80s", s->msg);
+            s->msg[0] = 0;
+        }
+    } while (s->status != 2);
+    saveblock(s);
+    windowsdestroy(s);
 
 #if 0
-    if (!loadsource(s)) {
-
         // work
         addframe(s);
         refresh_curpage(s);
@@ -60,13 +77,10 @@ int main(int argc, char **argv) {
         }
 
         freescreens(s);
-    }
 #endif
 
-    window_destroy(s);
-
     // end ncurses
-    move(24, 0);
+    move(25, 0);
     endwin();
 
     if (*s->msg) printf("%s\n", s->msg);

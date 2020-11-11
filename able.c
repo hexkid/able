@@ -7,18 +7,37 @@
 #include <time.h>
 #include "able.h"
 
+static void newblock(struct ableInfo *s);
+static void newpage(struct ableInfo *s);
+
+void processkey(struct ableInfo *s, int ch) {
+    if (ch == 'Q') {
+        s->status = 2;
+    }
+    sprintf(s->msg, "got key %08x", ch);
+    return;
+}
+
 void refreshall(struct ableInfo *s) {
     wnoutrefresh(stdscr);
     wnoutrefresh(s->wpage);
     wnoutrefresh(s->wsource);
-    wnoutrefresh(s->wedit);
-    wnoutrefresh(s->wcmd);
     wnoutrefresh(s->wstatus);
     wnoutrefresh(s->winfo);
+    if (s->status == 0) {
+        wnoutrefresh(s->wedit);
+        wnoutrefresh(s->wcmd);
+        wmove(s->wcmd, s->cmdy, s->cmdx);
+    }
+    if (s->status == 1) {
+        wnoutrefresh(s->wcmd);
+        wnoutrefresh(s->wedit);
+        wmove(s->wedit, s->edity, s->editx);
+    }
     doupdate();
 }
 
-void window_setup(struct ableInfo *s) {
+void windowscreate(struct ableInfo *s) {
     init_pair( 1, COLOR_WHITE,   COLOR_BLACK);
     init_pair( 2, COLOR_CYAN,    COLOR_BLACK);
     init_pair( 3, COLOR_GREEN,   COLOR_BLACK);
@@ -52,6 +71,7 @@ void window_setup(struct ableInfo *s) {
     mvwprintw(s->wsource, 0, 0, "%11s", s->srcname);
 
     s->wedit = newwin(16, 64, 4, 4);
+    keypad(s->wedit, TRUE);
     wbkgd(s->wedit, COLOR_PAIR(10));
     for (int k = 0; k < 16; k++) {
         mvwprintw(s->wedit, k, 0, "%.64s", s->s[s->current] + 1024*k);
@@ -68,6 +88,7 @@ void window_setup(struct ableInfo *s) {
 
     mvaddch(21, 2, '>');
     s->wcmd = newwin(1, 36, 21, 4);
+    keypad(s->wcmd, TRUE);
     wattron(s->wcmd, A_STANDOUT);
     mvaddch(21, 41, '<');
     wbkgd(s->wcmd, COLOR_PAIR(13));
@@ -78,7 +99,9 @@ void window_setup(struct ableInfo *s) {
     //mvwprintw(s->wstatus, 0, 0, "wstatus 901234567890");
 
     s->winfo = newwin(4, 80, 22, 0);
-    wbkgd(s->winfo, COLOR_PAIR(1));
+    idlok(s->winfo, TRUE);
+    scrollok(s->winfo, TRUE);
+    wbkgd(s->winfo, COLOR_PAIR(23));
     if (*s->msg) {
         mvwprintw(s->winfo, 0, 0, "%.79s\n", s->msg);
         *(s->msg) = 0;
@@ -87,7 +110,7 @@ void window_setup(struct ableInfo *s) {
     refresh();
 }
 
-void window_destroy(struct ableInfo *s) {
+void windowsdestroy(struct ableInfo *s) {
     delwin(s->wpage); s->wpage = NULL;
     delwin(s->wsource); s->wsource = NULL;
     delwin(s->wedit); s->wedit = NULL;
@@ -96,10 +119,11 @@ void window_destroy(struct ableInfo *s) {
     delwin(s->winfo); s->winfo = NULL;
 }
 
-int loadsource(struct ableInfo *s) {
+void loadsource(struct ableInfo *s) {
     s->current = 0;
     FILE *f = fopen(s->srcname, "rb");
-    if (!f) {
+    if (f) {
+#if 0
         memset(s->s, ' ', s->ms * sizeof *(s->s));
         if (s->ms < 2) {
             void *tmp = realloc(s->s, 2 * sizeof *(s->s));
@@ -112,19 +136,8 @@ int loadsource(struct ableInfo *s) {
             s->ms = s->ns = 2;
             memset(s->s, ' ', 2 * sizeof *(s->s));
         }
-        char title[65];
-        time_t tt = time(0);
-        struct tm t = *gmtime(&tt);
-        sprintf(title, "\\ <TITLE>                        "
-                       "                    %04d-%02d-%02d",
-                       t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
-        strncpy(s->s[0], title, 64); // don't mind the absence of '\0'
-        sprintf(title, "( <TITLE> )                       "
-                       "                    %04d-%02d-%02d",
-                       t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
-        strncpy(s->s[1], title, 64); // don't mind the absence of '\0'
         return 1;
-    } else {
+#endif
         s->ns = 0;
         for (;;) {
             char tmp[1024];
@@ -138,7 +151,7 @@ int loadsource(struct ableInfo *s) {
                         strcpy(s->msg, "Not enough memory");
                         s->status = 2;
                         fclose(f);
-                        return 1;
+                        return;
                     }
                     s->s = stmp;
                 }
@@ -146,7 +159,7 @@ int loadsource(struct ableInfo *s) {
                     if (tmp[k] < 32) tmp[k] = ' ';
                     if (tmp[k] > 0x7e) tmp[k] = ' ';
                 }
-                memcpy(s->s[s->ns], tmp, 1024);
+                memcpy(s->s[s->ns++], tmp, 1024);
             } else {
                 if (n > 0) {
                     memcpy(s->s[s->ns], tmp, n);
@@ -155,18 +168,26 @@ int loadsource(struct ableInfo *s) {
                     if (errno) {
                         sprintf(s->msg, "Error: %s\n", strerror(errno));
                         fclose(f);
-                        return 1;
+                        return;
                     } else {
                         fclose(f);
-                        return 0;
+                        sprintf(s->msg, "read %d screens", s->ns);
+                        return;
                     }
                 }
                 s->status = 2;
                 fclose(f);
-                return 1;
+                return;
             }
         }
+    } else {
+        newblock(s);
     }
+}
+
+void saveblock(struct ableInfo *s) {
+    if (s) return;
+    return;
 }
 
 #if 0
@@ -294,3 +315,34 @@ int addframe(struct ableInfo *s) {
     return 0;
 }
 #endif
+
+void newblock(struct ableInfo *s) {
+    if (s->ms < 2) {
+        s->s = realloc(s->s, 2 * sizeof *(s->s)); // have faith, using few Ks
+        s->ms = 2;
+    }
+    memset(s->s, ' ', s->ms * sizeof *(s->s));
+    char title[65];
+    time_t tt = time(0);
+    struct tm t = *gmtime(&tt);
+    sprintf(title, "\\ <TITLE>                        "
+                   "                    %04d-%02d-%02d",
+                   t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+    strncpy(s->s[0], title, 64); // don't mind the absence of '\0'
+    newpage(s);
+}
+
+void newpage(struct ableInfo *s) {
+    if (s->ns == s->ms) {
+        s->s = realloc(s->s, (++s->ms) * sizeof *(s->s)); // have faith, using few Ks
+    }
+    char title[65];
+    time_t tt = time(0);
+    struct tm t = *gmtime(&tt);
+    sprintf(title, "( <TITLE> )                       "
+                   "                    %04d-%02d-%02d",
+                   t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+    strncpy(s->s[s->ns], title, 64); // don't mind the absence of '\0'
+    memset(s->s[s->ns] + 64, ' ', 960);
+    sprintf(s->msg, "screen #%d added to block.", s->ns++);
+}

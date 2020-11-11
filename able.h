@@ -17,9 +17,11 @@ struct ableInfo {
 };
 
 void refreshall(struct ableInfo *s);
-void window_setup(struct ableInfo *s);
-void window_destroy(struct ableInfo *s);
-int loadsource(struct ableInfo *s);
+void windowscreate(struct ableInfo *s);
+void windowsdestroy(struct ableInfo *s);
+void loadsource(struct ableInfo *s);
+void saveblock(struct ableInfo *s);
+void processkey(struct ableInfo *s, int ch);
 
 #if 0
 int addframe(struct ableInfo *s);

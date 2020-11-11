@@ -6,7 +6,6 @@
 #include <string.h>
 #include <time.h>
 #include "able.h"
-#include "utils.h"
 
 void refreshall(struct ableInfo *s) {
     wnoutrefresh(stdscr);
@@ -201,7 +200,7 @@ int docmd(struct ableInfo *s, const char *cmd) {
     }
     if (tolower((unsigned char)*cmd) == 's') {
         FILE *f = fopen(s->srcname, "w+b");
-        if (!f) able_quit(strerror(errno));
+        if (!f) /* error */;
         fseek(f, 1024 * s->current, SEEK_SET);
         chtype lin[65];
         char lin8[65];

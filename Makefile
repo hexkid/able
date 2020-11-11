@@ -14,10 +14,10 @@ LFLAGS = -lncurses
 
 all: able
 
-able: main.o able.o utils.o
+able: main.o able.o
 	$(CC) $(CFLAGS) $(WFLAGS) $(OFLAGS) $(FFLAGS) $(LFLAGS) \
 	-o able \
-	main.o able.o utils.o \
+	main.o able.o \
 	$(LFLAGS)
 
 main.o: main.c
@@ -27,10 +27,6 @@ main.o: main.c
 able.o: able.c able.h
 	$(CC) $(CFLAGS) $(WFLAGS) $(OFLAGS) $(FFLAGS) \
 	-o able.o -c able.c
-
-utils.o: utils.c utils.h
-	$(CC) $(CFLAGS) $(WFLAGS) $(OFLAGS) $(FFLAGS) \
-	-o utils.o -c utils.c
 
 clean:
 	rm *.o

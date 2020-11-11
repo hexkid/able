@@ -4,6 +4,9 @@
 #include <string.h>
 #include "able.h"
 
+#define VERSION "v0.1.1"
+#define COMPILATIONDATE "2020-11-11"
+
 #if 0
     unsigned status;       // 0: command -- 1: edit -- 2: quit
     unsigned editx, edity; // (x, y) for edit area
@@ -28,7 +31,8 @@ int main(int argc, char **argv) {
     noecho();
     start_color();
 
-    mvprintw(0, 3, "Welcome to ABLE - (A)nother (BL)ock (E)ditor - v0.1.1 (2020-11-11)");
+    mvprintw(0, 3, "Welcome to ABLE - (A)nother (BL)ock (E)ditor - %s (%s)",
+          VERSION, COMPILATIONDATE);
     loadsource(s);
     windowscreate(s);
 

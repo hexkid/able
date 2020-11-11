@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "able.h"
 
@@ -7,6 +8,11 @@ int main(int argc, char **argv) {
     struct ableInfo s[1] = { 0 };
     strcpy(s->srcname, "blocks.fb");
     if (argc != 1) strcpy(s->srcname, argv[1]);
+
+    if (loadsource(s)) {
+        fprintf(stderr, "Error: %s\n", s->msg);
+        exit(EXIT_FAILURE);
+    }
 
     // start ncurses
     initscr();

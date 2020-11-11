@@ -1,7 +1,7 @@
-#ifndef FABLED_H_INCLUDED
-#define FABLED_H_INCLUDED
+#ifndef ABLE_H_INCLUDED
+#define ABLE_H_INCLUDED
 
-struct fabledStatus {
+struct ableInfo {
     unsigned status;       // 0: quit -- 1: command -- 2: editing
     unsigned x, y;         // (x, y) for edit area
     char srcname[81];      // name of blocks file on disk
@@ -12,12 +12,12 @@ struct fabledStatus {
 };
 
 
-int addframe(struct fabledStatus *s);
-int loadsource(struct fabledStatus *s);
-void freescreens(struct fabledStatus *s);
-void refresh_curpage(struct fabledStatus *s);
-int edit(struct fabledStatus *s);
-int docmd(struct fabledStatus *s, const char *cmd);
-int updatepageno(struct fabledStatus *s);
+int addframe(struct ableInfo *s);
+int loadsource(struct ableInfo *s);
+void freescreens(struct ableInfo *s);
+void refresh_curpage(struct ableInfo *s);
+int edit(struct ableInfo *s);
+int docmd(struct ableInfo *s, const char *cmd);
+int updatepageno(struct ableInfo *s);
 
 #endif

@@ -1,11 +1,11 @@
-# fabled
-FAncy BLock EDitor
+# able
+Another BLock Editor
 
 This is a Block editor for gForth.
 
 Almost got called "bled", but I came up with this better name.
 
-I could make gForth work with blocks my making
+I could make gForth work with blocks by making
 the first line in the first screen start with "\\\\" (backslash backslash),
 the first line in all other screens start with "\\ " (backslash space).
 

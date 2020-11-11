@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include "fabled.h"
+#include "able.h"
 #include "utils.h"
 
-int loadsource(struct fabledStatus *s) {
+int loadsource(struct ableInfo *s) {
     FILE *f = fopen(s->srcname, "rb");
     s->current = 0;
     if (!f) {
@@ -60,21 +60,21 @@ int loadsource(struct fabledStatus *s) {
     return 0;
 }
 
-void freescreens(struct fabledStatus *s) {
+void freescreens(struct ableInfo *s) {
     free(s->s);
     s->s = NULL;
     s->ns = 0;
     s->current = 0;
 }
 
-void refresh_curpage(struct fabledStatus *s) {
+void refresh_curpage(struct ableInfo *s) {
     updatepageno(s);
     for (int k = 0; k < 16; k++) {
         mvprintw(5+k, 4, "%.64s", s->s[s->current] + 64*k);
     }
 }
 
-int addpage(struct fabledStatus *s) {
+int addpage(struct ableInfo *s) {
     void *tmp = realloc(s->s, (s->ns + 1) * sizeof *(s->s));
     if (tmp == NULL) {
         strcpy(s->msg, "Not enough memory");
@@ -95,7 +95,7 @@ int addpage(struct fabledStatus *s) {
     return 0;
 }
 
-int edit(struct fabledStatus *s) {
+int edit(struct ableInfo *s) {
     move(s->y, s->x);
     unsigned ch = getch();
     mvprintw(24, 0, "key: 0x%04x        ", ch);
@@ -136,7 +136,7 @@ int edit(struct fabledStatus *s) {
     return 0;
 }
 
-int docmd(struct fabledStatus *s, const char *cmd) {
+int docmd(struct ableInfo *s, const char *cmd) {
     if (tolower((unsigned char)*cmd) == 'q') {
         s->status = 0;
         return 0;
@@ -148,7 +148,7 @@ int docmd(struct fabledStatus *s, const char *cmd) {
     }
     if (tolower((unsigned char)*cmd) == 's') {
         FILE *f = fopen(s->srcname, "w+b");
-        if (!f) fabledquit(strerror(errno));
+        if (!f) able_quit(strerror(errno));
         fseek(f, 1024 * s->current, SEEK_SET);
         chtype lin[65];
         char lin8[65];
@@ -165,13 +165,13 @@ int docmd(struct fabledStatus *s, const char *cmd) {
     return -1;
 }
 
-int updatepageno(struct fabledStatus *s) {
+int updatepageno(struct ableInfo *s) {
     mvprintw(3, 4, "Page %d/%d  ", s->current + 1, s->ns ? s->ns : 1);
     return 0;
 }
 
-int addframe(struct fabledStatus *s) {
-    mvprintw(0, 4, "Welcome to fabled - your (FA)ncy (BL)ock (ED)itor for Forth fans");
+int addframe(struct ableInfo *s) {
+    mvprintw(0, 4, "Welcome to able - (A)nother (BL)ock (E)ditor for Forth fans");
     updatepageno(s);
     mvprintw(3, 15, "%53s", s->srcname);
     mvaddch(4, 3, '+');          mvaddch(4, 68, '+');

@@ -1,21 +1,10 @@
 #include <ncurses.h>
 #include <stdio.h>
 #include <string.h>
-#include "fabled.h"
-
-// following struct defined in "fabled.h"
-// struct fabledStatus {
-//     unsigned status;       // 0: quit -- 1: command -- 2: editing
-//     unsigned x, y;         // (x, y) for edit area
-//     char srcname[81]       // name of blocks file on disk
-//     char (*s)[1024];       // screens (1024 chars each)
-//     unsigned ns;           // number of screens
-//     unsigned current;      // current screen
-//     char message[80];      // message
-// };
+#include "able.h"
 
 int main(int argc, char **argv) {
-    struct fabledStatus s[1] = { 1, 4, 5, "blocks.fb", 0, 0, 0, "" };
+    struct ableStatus s[1] = { 1, 4, 5, "blocks.fb", 0, 0, 0, "" };
     if (argc != 1) strcpy(s->srcname, argv[1]);
     if (!loadsource(s)) {
         // start ncurses

@@ -4,13 +4,25 @@
 #include "able.h"
 
 int main(int argc, char **argv) {
-    struct ableStatus s[1] = { 1, 4, 5, "blocks.fb", 0, 0, 0, "" };
+    struct ableInfo s[1] = { 0 };
+    strcpy(s->srcname, "blocks.fb");
     if (argc != 1) strcpy(s->srcname, argv[1]);
+
+    // start ncurses
+    initscr();
+    cbreak();
+    noecho();
+    keypad(stdscr, TRUE);
+    start_color();
+
+    mvprintw(0, 0, "Press any key");
+
+    window_setup(s);
+    refreshall(s);
+    getch();
+
+#if 0
     if (!loadsource(s)) {
-        // start ncurses
-        initscr();
-        cbreak();
-        keypad(stdscr, TRUE);
 
         // work
         addframe(s);
@@ -41,11 +53,16 @@ int main(int argc, char **argv) {
             }
         }
 
-        // end ncurses
-        move(24, 0);
-        endwin();
         freescreens(s);
     }
+#endif
+
+    window_destroy(s);
+
+    // end ncurses
+    move(24, 0);
+    endwin();
+
     if (*s->msg) printf("%s\n", s->msg);
     return 0;
 }

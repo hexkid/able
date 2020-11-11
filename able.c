@@ -8,6 +8,59 @@
 #include "able.h"
 #include "utils.h"
 
+void refreshall(struct ableInfo *s) {
+    wnoutrefresh(stdscr);
+    wnoutrefresh(s->wpage);
+    wnoutrefresh(s->wsource);
+    wnoutrefresh(s->wedit);
+    wnoutrefresh(s->wcmd);
+    wnoutrefresh(s->wstatus);
+    wnoutrefresh(s->winfo);
+    doupdate();
+}
+
+void window_setup(struct ableInfo *s) {
+    init_pair(1, COLOR_WHITE, COLOR_BLUE);
+    init_pair(2, COLOR_WHITE, COLOR_GREEN);
+    init_pair(3, COLOR_WHITE, COLOR_RED);
+
+    s->wpage = newwin(1, 10, 3, 4);
+    wbkgd(s->wpage, COLOR_PAIR(2));
+    mvwprintw(s->wpage, 0, 0, "wpage 789012");
+
+    s->wsource = newwin(1, 53, 3, 15);
+    wbkgd(s->wsource, COLOR_PAIR(3));
+    mvwprintw(s->wsource, 0, 0, "wsource 90123456789012345678901234567890123456789012345");
+
+    s->wedit = newwin(16, 64, 5, 4);
+    wbkgd(s->wedit, COLOR_PAIR(1));
+    mvwprintw(s->wedit, 0, 0, "wedit 789012345678901234567890123456789012345678901234567890123456");
+
+    s->wcmd = newwin(1, 24, 22, 6);
+    wbkgd(s->wcmd, COLOR_PAIR(2));
+    mvwprintw(s->wcmd, 0, 0, "wcmd 678901234567890123456");
+
+    s->wstatus = newwin(1, 40, 22, 31);
+    wbkgd(s->wstatus, COLOR_PAIR(3));
+    mvwprintw(s->wstatus, 0, 0, "wstatus 9012345678901234567890123456789012");
+
+    s->winfo = newwin(3, 80, 23, 0);
+    wbkgd(s->winfo, COLOR_PAIR(1));
+    mvwprintw(s->winfo, 0, 0, "++++++++\n-----\n::::::\nzzzzzzz");
+
+    refresh();
+}
+
+void window_destroy(struct ableInfo *s) {
+    delwin(s->wpage); s->wpage = NULL;
+    delwin(s->wsource); s->wsource = NULL;
+    delwin(s->wedit); s->wedit = NULL;
+    delwin(s->wcmd); s->wcmd = NULL;
+    delwin(s->wstatus); s->wstatus = NULL;
+    delwin(s->winfo); s->winfo = NULL;
+}
+
+#if 0
 int loadsource(struct ableInfo *s) {
     FILE *f = fopen(s->srcname, "rb");
     s->current = 0;
@@ -96,16 +149,16 @@ int addpage(struct ableInfo *s) {
 }
 
 int edit(struct ableInfo *s) {
-    move(s->y, s->x);
+    move(s->edity, s->editx);
     unsigned ch = getch();
     mvprintw(24, 0, "key: 0x%04x        ", ch);
-    if ((ch == KEY_UP)    && (s->y > 5))  move(--s->y, s->x);
-    if ((ch == KEY_DOWN)  && (s->y < 20)) move(++s->y, s->x);
-    if ((ch == KEY_LEFT)  && (s->x > 4))  move(s->y, --s->x);
-    if ((ch == KEY_RIGHT) && (s->x < 67)) move(s->y, ++s->x);
-    if ((ch == KEY_BACKSPACE) && (s->x > 4)) {
-        mvaddch(s->y, --s->x, ' ');
-        move(s->y, s->x);
+    if ((ch == KEY_UP)    && (s->edity > 5))  move(--s->edity, s->editx);
+    if ((ch == KEY_DOWN)  && (s->edity < 20)) move(++s->edity, s->editx);
+    if ((ch == KEY_LEFT)  && (s->editx > 4))  move(s->edity, --s->editx);
+    if ((ch == KEY_RIGHT) && (s->editx < 67)) move(s->edity, ++s->editx);
+    if ((ch == KEY_BACKSPACE) && (s->editx > 4)) {
+        mvaddch(s->edity, --s->editx, ' ');
+        move(s->edity, s->editx);
     }
     if (ch == KEY_NPAGE) {
         s->current++;
@@ -121,16 +174,16 @@ int edit(struct ableInfo *s) {
         s->status = 1;
     }
     if ((ch == '\n') || (ch == '\r')) {
-        s->x = 4;
-        s->y++;
-        if (s->y == 21) s->y = 5;
+        s->editx = 4;
+        s->edity++;
+        if (s->edity == 21) s->edity = 5;
     }
     if (isgraph((unsigned char)ch) || (ch == ' ')) {
-        mvaddch(s->y, s->x++, ch);
-        if (s->x == 68) {
-            s->x = 4;
-            s->y++;
-            if (s->y == 21) s->y = 5;
+        mvaddch(s->edity, s->editx++, ch);
+        if (s->editx == 68) {
+            s->editx = 4;
+            s->edity++;
+            if (s->edity == 21) s->edity = 5;
         }
     }
     return 0;
@@ -183,3 +236,4 @@ int addframe(struct ableInfo *s) {
     move(22, 6);
     return 0;
 }
+#endif

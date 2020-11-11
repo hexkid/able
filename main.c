@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
     keypad(stdscr, TRUE);
     start_color();
 
-    mvprintw(0, 0, "Press any key");
+    mvprintw(0, 3, "Welcome to ABLE - (A)nother (BL)ock (E)ditor - v0.1.1 (2020-11-11)");
 
     window_setup(s);
     refreshall(s);

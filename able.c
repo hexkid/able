@@ -19,27 +19,58 @@ void refreshall(struct ableInfo *s) {
 }
 
 void window_setup(struct ableInfo *s) {
-    init_pair(1, COLOR_WHITE, COLOR_BLUE);
-    init_pair(2, COLOR_WHITE, COLOR_GREEN);
-    init_pair(3, COLOR_WHITE, COLOR_RED);
+    init_pair( 1, COLOR_WHITE,   COLOR_BLACK);
+    init_pair( 2, COLOR_CYAN,    COLOR_BLACK);
+    init_pair( 3, COLOR_GREEN,   COLOR_BLACK);
+    init_pair( 4, COLOR_YELLOW,  COLOR_BLACK);
+    init_pair( 5, COLOR_BLACK,   COLOR_WHITE);
+    init_pair( 6, COLOR_MAGENTA, COLOR_WHITE);
+    init_pair( 7, COLOR_BLUE,    COLOR_WHITE);
+    init_pair( 8, COLOR_RED,     COLOR_WHITE);
+    init_pair( 9, COLOR_WHITE,   COLOR_MAGENTA);
+    init_pair(10, COLOR_WHITE,   COLOR_BLUE);
+    init_pair(11, COLOR_CYAN,    COLOR_BLUE);
+    init_pair(12, COLOR_GREEN,   COLOR_BLUE);
+    init_pair(13, COLOR_YELLOW,  COLOR_BLUE);
+    init_pair(14, COLOR_BLACK,   COLOR_CYAN);
+    init_pair(15, COLOR_BLUE,    COLOR_CYAN);
+    init_pair(16, COLOR_RED,     COLOR_CYAN);
+    init_pair(17, COLOR_BLACK,   COLOR_GREEN);
+    init_pair(18, COLOR_BLUE,    COLOR_GREEN);
+    init_pair(19, COLOR_BLACK,   COLOR_YELLOW);
+    init_pair(20, COLOR_MAGENTA, COLOR_YELLOW);
+    init_pair(21, COLOR_BLUE,    COLOR_YELLOW);
+    init_pair(22, COLOR_RED,     COLOR_YELLOW);
+    init_pair(23, COLOR_WHITE,   COLOR_RED);
 
-    s->wpage = newwin(1, 10, 2, 4);
-    wbkgd(s->wpage, COLOR_PAIR(2));
-    mvwprintw(s->wpage, 0, 0, "wpage 789012");
+    s->wpage = newwin(1, 20, 2, 3);
+    wbkgd(s->wpage, COLOR_PAIR(1));
+    mvwprintw(s->wpage, 0, 0, " screen #12 (13/13) ");
 
-    s->wsource = newwin(1, 53, 2, 15);
-    wbkgd(s->wsource, COLOR_PAIR(3));
-    mvwprintw(s->wsource, 0, 0, "wsource 90123456789012345678901234567890123456789012345");
+    s->wsource = newwin(1, 11, 2, 58);
+    wbkgd(s->wsource, COLOR_PAIR(1));
+    mvwprintw(s->wsource, 0, 0, "%11s", "blocks.fb");
 
     s->wedit = newwin(16, 64, 4, 4);
-    wbkgd(s->wedit, COLOR_PAIR(1));
+    wbkgd(s->wedit, COLOR_PAIR(10));
     mvwprintw(s->wedit, 0, 0, "wedit 789012345678901234567890123456789012345678901234567890123456");
 
-    s->wcmd = newwin(1, 24, 21, 6);
-    wbkgd(s->wcmd, COLOR_PAIR(2));
-    mvwprintw(s->wcmd, 0, 0, "wcmd 678901234567890123456");
+    mvaddch(3, 3, '+');
+    mvhline(3, 4, '-', 64);
+    mvaddch(3, 68, '+');
+    for (int k = 0; k < 16; k++) mvprintw(k + 4, 1, "%2d|", k);
+    for (int k = 0; k < 16; k++) mvaddch(k + 4, 68, '|');
+    mvaddch(20, 3, '+');
+    mvhline(20, 4, '-', 64);
+    mvaddch(20, 68, '+');
 
-    s->wstatus = newwin(1, 40, 21, 31);
+    mvaddch(21, 2, '>');
+    s->wcmd = newwin(1, 36, 21, 4);
+    mvaddch(21, 41, '<');
+    wbkgd(s->wcmd, COLOR_PAIR(2));
+    mvwprintw(s->wcmd, 0, 0, "wcmd 67890123456789012345678901234567890123");
+
+    s->wstatus = newwin(1, 20, 21, 49);
     wbkgd(s->wstatus, COLOR_PAIR(3));
     mvwprintw(s->wstatus, 0, 0, "wstatus 9012345678901234567890123456789012");
 

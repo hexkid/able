@@ -5,19 +5,6 @@
 
 #define VERSION "v0.1."
 
-#if 0
-    unsigned status;       // 0: command -- 1: edit -- 2: quit
-    unsigned editx, edity; // (x, y) for edit area
-    unsigned cmdx, cmdy;   // (x, y) for commad prompt (y is constant)
-    char srcname[81];      // name of blocks file on disk
-    char (*s)[1024];       // screens
-    unsigned ms, ns;       // number of screens: allocated, used
-    unsigned current;      // current screen
-    char msg[81];          // message
-    WINDOW *wpage, *wsource, *wedit;
-    WINDOW *wcmd, *wstatus, *winfo;
-#endif
-
 int main(int argc, char **argv) {
     struct ableInfo s[1] = { 0 };
     strcpy(s->srcname, "blocks.fb");
@@ -34,7 +21,6 @@ int main(int argc, char **argv) {
           VERSION, count);
     loadsource(s);
     windowscreate(s);
-
     do {
         refreshall(s);
         if (s->status == 0) wmove(s->wcmd, s->cmdy, s->cmdx);

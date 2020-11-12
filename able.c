@@ -11,6 +11,22 @@ static void newblock(struct ableInfo *s);
 static void newpage(struct ableInfo *s);
 
 void processkey(struct ableInfo *s, int ch) {
+#if 0
+                case 1: // command-line
+                        mvprintw(22, 6, "                        ");
+                        move(22, 6);
+                        echo();
+                        char cmd[25];
+                        getnstr(cmd, 24);
+                        docmd(s, cmd);
+                        break;
+                case 2: // editing
+                        mvprintw(22, 6, "Hit <TAB> for command   ");
+                        move(s->y, s->x);
+                        noecho();
+                        edit(s);
+                        break;
+#endif
     if (ch == 'Q') {
         s->status = 2;
     }

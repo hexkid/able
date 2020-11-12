@@ -105,9 +105,8 @@ void windowscreate(struct ableInfo *s) {
     mvaddch(21, 2, '>');
     s->wcmd = newwin(1, 36, 21, 4);
     keypad(s->wcmd, TRUE);
-    wattron(s->wcmd, A_STANDOUT);
-    mvaddch(21, 41, '<');
     wbkgd(s->wcmd, COLOR_PAIR(13));
+    mvaddch(21, 41, '<');
     //mvwprintw(s->wcmd, 0, 0, "quit");
 
     s->wstatus = newwin(1, 20, 21, 49);
@@ -118,10 +117,6 @@ void windowscreate(struct ableInfo *s) {
     idlok(s->winfo, TRUE);
     scrollok(s->winfo, TRUE);
     wbkgd(s->winfo, COLOR_PAIR(23));
-    if (*s->msg) {
-        mvwprintw(s->winfo, 0, 0, "%.79s\n", s->msg);
-        *(s->msg) = 0;
-    }
 
     refresh();
 }

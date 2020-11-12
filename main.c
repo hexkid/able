@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
         refreshall(s);
         if (s->status == 0) wmove(s->wcmd, s->cmdy, s->cmdx);
         else                wmove(s->wedit, s->edity, s->editx);
-        processkey(s, getch());
+        processkey(s, wgetch((!s->status)?(s->wcmd):(s->wedit)));
         if ((s->status < 2) && *s->msg) {
             wscrl(s->winfo, -1);
             mvwprintw(s->winfo, 0, 0, "%-80s", s->msg);

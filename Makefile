@@ -19,11 +19,11 @@ updatecount: updatecount.c
 	-o updatecount updatecount.c
 
 able: main.o able.o
-	./updatecount
 	$(CC) $(CFLAGS) $(WFLAGS) $(OFLAGS) $(FFLAGS) $(LFLAGS) \
 	-o able \
 	main.o able.o \
 	$(LFLAGS)
+	./updatecount
 
 main.o: main.c
 	$(CC) $(CFLAGS) $(WFLAGS) $(OFLAGS) $(FFLAGS) \

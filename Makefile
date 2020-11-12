@@ -12,7 +12,11 @@ OFLAGS = -O3 -DNDEBUG
 FFLAGS = -fno-omit-frame-pointer -fno-common -fstrict-aliasing
 LFLAGS = -lncurses
 
-all: able
+all: updatecount able
+
+updatecount: updatecount.c
+	$(CC) $(CFLAGS) $(WFLAGS) $(OFLAGS) $(FFLAGS) \
+	-o updatecount updatecount.c
 
 able: main.o able.o
 	./updatecount

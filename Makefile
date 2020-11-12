@@ -15,6 +15,7 @@ LFLAGS = -lncurses
 all: able
 
 able: main.o able.o
+	./updatecount
 	$(CC) $(CFLAGS) $(WFLAGS) $(OFLAGS) $(FFLAGS) $(LFLAGS) \
 	-o able \
 	main.o able.o \

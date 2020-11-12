@@ -3,8 +3,7 @@
 #include <string.h>
 #include "able.h"
 
-#define VERSION "v0.1.1"
-#define COMPILATIONDATE "2020-11-11"
+#define VERSION "v0.1."
 
 #if 0
     unsigned status;       // 0: command -- 1: edit -- 2: quit
@@ -30,8 +29,9 @@ int main(int argc, char **argv) {
     noecho();
     start_color();
 
-    mvprintw(0, 3, "Welcome to ABLE - (A)nother (BL)ock (E)ditor - %s (%s)",
-          VERSION, COMPILATIONDATE);
+    #include "count.inc" // int count = ##; // compilation count :-)
+    mvprintw(0, 3, "Welcome to ABLE - (A)nother (BL)ock (E)ditor - %s%d",
+          VERSION, count);
     loadsource(s);
     windowscreate(s);
 

@@ -3,7 +3,7 @@
 #include <string.h>
 #include "able.h"
 
-#define VERSION "v0.1."
+#define VERSION "0.1"
 
 int main(int argc, char **argv) {
     struct ableInfo s[1] = { 0 };
@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     start_color();
 
     #include "count.inc" // int count = ##; // compilation count :-)
-    mvprintw(0, 3, "Welcome to ABLE - (A)nother (BL)ock (E)ditor - %s%d",
+    mvprintw(0, 3, "Welcome to ABLE - (A)nother (BL)ock (E)ditor - v%s (%d)",
           VERSION, count);
     loadsource(s);
     windowscreate(s);

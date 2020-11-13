@@ -9,6 +9,8 @@
 
 static void newblock(struct ableInfo *s);
 static void newpage(struct ableInfo *s);
+static void devicetomemory(struct ableInfo *s);
+static void addscreen(struct ableInfo *s);
 
 void processkey(struct ableInfo *s, int ch) {
 #if 0
@@ -27,6 +29,15 @@ void processkey(struct ableInfo *s, int ch) {
                         edit(s);
                         break;
 #endif
+    if (ch == KEY_NPAGE) {
+        devicetomemory(s);
+        if (s->current++ == s->ns) addscreen(s);
+        return;
+    }
+    if (ch == KEY_PPAGE) {
+        if (s->current > 0) { devicetomemory(s); s->current--; }
+        else flash();
+    }
     if (ch == 'Q') {
         s->status = 2;
     }
@@ -356,4 +367,22 @@ void newpage(struct ableInfo *s) {
     strncpy(s->s[s->ns], title, 64); // don't mind the absence of '\0'
     memset(s->s[s->ns] + 64, ' ', 960);
     sprintf(s->msg, "screen #%d added to block.", s->ns++);
+}
+
+void devicetomemory(struct ableInfo *s) {
+    chtype lin[64];
+    char lin8[64];
+    for (int k = 0; k < 16; k++) {
+        move(4 + k, 4);
+        inchnstr(lin, 64);
+        for (int kk = 0; kk < 64; kk++) lin8[kk] = (lin[kk] & 0x7f);
+        memmove(s->s[s->current] + 64*k, lin8, 64);
+    }
+}
+
+void addscreen(struct ableInfo *s) {
+    if (s->ns == s->ms) {
+        s->s = realloc(s->s, ++s->ms * sizeof *(s->s));
+    }
+    memset(s->s[s->ns++], ' ', 1024);
 }

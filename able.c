@@ -336,11 +336,11 @@ void newpage(struct ableInfo *s) {
 #endif
 
 void addmessage(struct ableInfo *s, const char *msg, const char *extra) {
-    wscrl(s->winf, -1);
+    wscrl(s->winf, 1);
     if (extra && *extra) {
-        mvwprintw(s->winf, 0, 0, "%s %s", msg, extra);
+        mvwprintw(s->winf, 3, 0, "%s %s", msg, extra);
     } else {
-        mvwprintw(s->winf, 0, 0, "%s", msg);
+        mvwprintw(s->winf, 3, 0, "%s", msg);
     }
 }
 

@@ -2,10 +2,13 @@
 
 #define VERSION_MAJOR 0      // incompatible API changes (or whenever)
 #define VERSION_MINOR 3      // added backwards compatible functionality
-#define VERSION_PATCH 2      // backwards compatible bug fixes
-#define VERSION_BUILD 51     // manual update after compile (unless forgotten)
+#define VERSION_PATCH 3      // backwards compatible bug fixes
+#define VERSION_BUILD 52     // manual update after compile (unless forgotten)
 
 #if 0
+
+version 0.3.2 *** 2020-11-13
+Infos scroll downwards.
 
 version 0.3.2 *** 2020-11-13
 Simplifying, restructuring.

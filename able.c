@@ -7,10 +7,130 @@
 #include <time.h>
 #include "able.h"
 
+#if 0
+struct ableInfo {
+    unsigned status;       // 0: command -- 1: edit -- 2: quit
+    char srcname[81];      // name of blocks file on disk
+    char (*s)[16][64];     // screens; not strings: no '\0'
+    unsigned ms, ns, cs;   // number of screens: allocated, used, current
+    unsigned edtx, edty;   // (x, y) for edit area
+    unsigned cmdx, cmdy;   // (x, y) for commad prompt (y is constant)
+    WINDOW *wpage, *wsource, *wedit;
+    WINDOW *wcmd, *wstatus, *winfo;
+};
+
+void loadsource(struct ableInfo *s);
+void windowscreate(struct ableInfo *s);
+
+void refreshall(struct ableInfo *s);
+void processkey(struct ableInfo *s, int ch);
+void saveblock(struct ableInfo *s);
+
+void windowsdestroy(struct ableInfo *s);
+#endif
+
 static void newblock(struct ableInfo *s);
 static void newpage(struct ableInfo *s);
-static void devicetomemory(struct ableInfo *s);
+static void saveblock(struct ableInfo *s);
 static void addscreen(struct ableInfo *s);
+static void addmessage(struct ableInfo *s, const char *msg, const char *extra);
+
+void startcurses(void) {
+    initscr();
+    cbreak();
+    noecho();
+    start_color();
+}
+
+void setfname(struct ableInfo *s, const char *fname) {
+    strcpy(s->srcname, fname);
+}
+
+void loadsource(struct ableInfo *s) {
+    s->cs = 0;
+    FILE *f = fopen(s->srcname, "rb");
+    if (f) {
+#if 0
+        memset(s->s, ' ', s->ms * sizeof *(s->s));
+        if (s->ms < 2) {
+            void *tmp = realloc(s->s, 2 * sizeof *(s->s));
+            if (!tmp) {
+                addmessage(s, "Not enough memory", 0);
+                s->status = 2;
+                return 1;
+            }
+            s->s = tmp;
+            s->ms = s->ns = 2;
+            memset(s->s, ' ', 2 * sizeof *(s->s));
+        }
+        return 1;
+#endif
+        s->ns = 0;
+        for (;;) {
+            char tmp[1024];
+            memset(tmp, ' ', 1024);
+            errno = 0;
+            int n = fread(tmp, 1, 1024, f);
+            if ((n > 0) && (errno == 0)) {
+                if (s->ns == s->ms) {
+                    void *stmp = realloc(s->s, ++s->ms * sizeof *(s->s));
+                    if (!stmp) {
+                        addmessage(s, "Not enough memory", 0);
+                        s->status = 2;
+                        fclose(f);
+                        return;
+                    }
+                    s->s = stmp;
+                }
+                for (int k = 0; k < 1024; k++) {
+                    if (tmp[k] < 32) tmp[k] = ' ';
+                    if (tmp[k] > 0x7e) tmp[k] = ' ';
+                }
+                memcpy(s->s[s->ns++], tmp, 1024);
+            } else {
+                if (n > 0) {
+                    memcpy(s->s[s->ns], tmp, n);
+                    addmessage(s, "Error:", strerror(errno));
+                } else {
+                    if (errno) {
+                        addmessage(s, "Error:", strerror(errno));
+                        fclose(f);
+                        return;
+                    } else {
+                        fclose(f);
+                        addmessage(s, "incomplete final page");
+                        return;
+                    }
+                }
+                s->status = 2;
+                fclose(f);
+                return;
+            }
+        }
+    } else {
+        initscreen(s, 0);
+        initscreen(s, 1);
+        s->ns = 2;
+        s->cs = 0;
+    }
+}
+
+void endcurses(void) {
+    move(25, 0);
+    endwin();
+}
+
+void initscreen(struct ableInfo *s, int n) {
+    while (n >= s->ms) addscreen(s);
+    memset(s->s[n], ' ', 1024);
+}
+
+void rep(struct ableInfo *s) {
+    if (s->status == 0) wmove(s->wcmd, s->cmdy, s->cmdx);
+    else                wmove(s->wedit, s->edity, s->editx);
+    int ch = wgetch((s->status == 0) ? s->wcmd : s->wedit);
+    processkey(s, ch);
+}
 
 void processkey(struct ableInfo *s, int ch) {
 #if 0
@@ -30,19 +150,26 @@ void processkey(struct ableInfo *s, int ch) {
                         break;
 #endif
     if (ch == KEY_NPAGE) {
-        devicetomemory(s);
-        if (s->current++ == s->ns) addscreen(s);
+        if (s->cs++ == s->ns) addscreen(s);
         return;
     }
     if (ch == KEY_PPAGE) {
-        if (s->current > 0) { devicetomemory(s); s->current--; }
+        if (s->cs > 0) { s->cs--; }
         else flash();
     }
     if (ch == 'Q') {
         s->status = 2;
     }
-    sprintf(s->msg, "got key %08x", ch);
     return;
+}
+
+void addmessage(struct ableInfo *s, const char *msg, const char *extra) {
+    wscrl(s->winfo, -1);
+    if (extra) {
+        mvwprintw(s->winfo, 0, 0, "%s %s", msg, extra);
+    } else {
+        mvwprintw(s->winfo, 0, 0, "%s", msg);
+    }
 }
 
 void refreshall(struct ableInfo *s) {
@@ -89,19 +216,21 @@ void windowscreate(struct ableInfo *s) {
     init_pair(22, COLOR_RED,     COLOR_YELLOW);
     init_pair(23, COLOR_WHITE,   COLOR_RED);
 
+    mvprintw(0, 3, s->title);
+
     s->wpage = newwin(1, 20, 2, 3);
     wbkgd(s->wpage, COLOR_PAIR(1));
-    mvwprintw(s->wpage, 0, 0, " screen #%d (%d/%d) ", s->current + 1, s->current, s->ms);
+    mvwprintw(s->wpage, 0, 0, " screen #%d (%d/%d)   ", s->cs + 1, s->cs, s->ms);
 
     s->wsource = newwin(1, 11, 2, 58);
     wbkgd(s->wsource, COLOR_PAIR(1));
-    mvwprintw(s->wsource, 0, 0, "%11s", s->srcname);
+    mvwprintw(s->wsource, 0, 0, "%11s          ", s->srcname);
 
     s->wedit = newwin(16, 64, 4, 4);
     keypad(s->wedit, TRUE);
     wbkgd(s->wedit, COLOR_PAIR(10));
     for (int k = 0; k < 16; k++) {
-        mvwprintw(s->wedit, k, 0, "%.64s", s->s[s->current] + 1024*k);
+        mvwprintw(s->wedit, k, 0, "%.64s", s->s[s->cs] + 1024*k);
     }
 
     mvaddch(3, 3, '+');
@@ -141,72 +270,6 @@ void windowsdestroy(struct ableInfo *s) {
     delwin(s->winfo); s->winfo = NULL;
 }
 
-void loadsource(struct ableInfo *s) {
-    s->current = 0;
-    FILE *f = fopen(s->srcname, "rb");
-    if (f) {
-#if 0
-        memset(s->s, ' ', s->ms * sizeof *(s->s));
-        if (s->ms < 2) {
-            void *tmp = realloc(s->s, 2 * sizeof *(s->s));
-            if (!tmp) {
-                strcpy(s->msg, "Not enough memory");
-                s->status = 2;
-                return 1;
-            }
-            s->s = tmp;
-            s->ms = s->ns = 2;
-            memset(s->s, ' ', 2 * sizeof *(s->s));
-        }
-        return 1;
-#endif
-        s->ns = 0;
-        for (;;) {
-            char tmp[1024];
-            memset(tmp, ' ', 1024);
-            errno = 0;
-            int n = fread(tmp, 1, 1024, f);
-            if ((n > 0) && (errno == 0)) {
-                if (s->ns == s->ms) {
-                    void *stmp = realloc(s->s, ++s->ms * sizeof *(s->s));
-                    if (!stmp) {
-                        strcpy(s->msg, "Not enough memory");
-                        s->status = 2;
-                        fclose(f);
-                        return;
-                    }
-                    s->s = stmp;
-                }
-                for (int k = 0; k < 1024; k++) {
-                    if (tmp[k] < 32) tmp[k] = ' ';
-                    if (tmp[k] > 0x7e) tmp[k] = ' ';
-                }
-                memcpy(s->s[s->ns++], tmp, 1024);
-            } else {
-                if (n > 0) {
-                    memcpy(s->s[s->ns], tmp, n);
-                    sprintf(s->msg, "Error: %s\n", strerror(errno));
-                } else {
-                    if (errno) {
-                        sprintf(s->msg, "Error: %s\n", strerror(errno));
-                        fclose(f);
-                        return;
-                    } else {
-                        fclose(f);
-                        sprintf(s->msg, "read %d screens", s->ns);
-                        return;
-                    }
-                }
-                s->status = 2;
-                fclose(f);
-                return;
-            }
-        }
-    } else {
-        newblock(s);
-    }
-}
-
 void saveblock(struct ableInfo *s) {
     if (s) return;
     return;
@@ -217,20 +280,19 @@ void freescreens(struct ableInfo *s) {
     free(s->s);
     s->s = NULL;
     s->ns = 0;
-    s->current = 0;
+    s->cs = 0;
 }
 
 void refresh_curpage(struct ableInfo *s) {
-    updatepageno(s);
     for (int k = 0; k < 16; k++) {
-        mvprintw(5+k, 4, "%.64s", s->s[s->current] + 64*k);
+        mvprintw(5+k, 4, "%.64s", s->s[s->cs] + 64*k);
     }
 }
 
 int addpage(struct ableInfo *s) {
     void *tmp = realloc(s->s, (s->ns + 1) * sizeof *(s->s));
     if (tmp == NULL) {
-        strcpy(s->msg, "Not enough memory");
+        addmessage(s, "Not enough memory");
         s->status = 0;
         return 1;
     }
@@ -244,7 +306,6 @@ int addpage(struct ableInfo *s) {
                   t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
     strncpy(s->s[s->ns], stmp, 64);
     s->ns += 1;
-    updatepageno(s);
     return 0;
 }
 
@@ -261,12 +322,12 @@ int edit(struct ableInfo *s) {
         move(s->edity, s->editx);
     }
     if (ch == KEY_NPAGE) {
-        s->current++;
-        if (s->current == s->ns) addpage(s);
+        s->cs++;
+        if (s->cs == s->ns) addpage(s);
         refresh_curpage(s);
     }
     if (ch == KEY_PPAGE) {
-        if (s->current) s->current--;
+        if (s->cs) s->cs--;
         refresh_curpage(s);
     }
     if ((ch >> 7) != 0) return 0; // ignore other 'special' keys
@@ -302,7 +363,7 @@ int docmd(struct ableInfo *s, const char *cmd) {
     if (tolower((unsigned char)*cmd) == 's') {
         FILE *f = fopen(s->srcname, "w+b");
         if (!f) /* error */;
-        fseek(f, 1024 * s->current, SEEK_SET);
+        fseek(f, 1024 * s->cs, SEEK_SET);
         chtype lin[65];
         char lin8[65];
         for (int k = 0; k < 16; k++) {
@@ -318,14 +379,8 @@ int docmd(struct ableInfo *s, const char *cmd) {
     return -1;
 }
 
-int updatepageno(struct ableInfo *s) {
-    mvprintw(3, 4, "Page %d/%d  ", s->current + 1, s->ns ? s->ns : 1);
-    return 0;
-}
-
 int addframe(struct ableInfo *s) {
     mvprintw(0, 4, "Welcome to able - (A)nother (BL)ock (E)ditor for Forth fans");
-    updatepageno(s);
     mvprintw(3, 15, "%53s", s->srcname);
     mvaddch(4, 3, '+');          mvaddch(4, 68, '+');
     mvaddch(21, 3, '+');         mvaddch(21, 68, '+');
@@ -365,19 +420,8 @@ void newpage(struct ableInfo *s) {
                    "                    %04d-%02d-%02d",
                    t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
     strncpy(s->s[s->ns], title, 64); // don't mind the absence of '\0'
-    memset(s->s[s->ns] + 64, ' ', 960);
-    sprintf(s->msg, "screen #%d added to block.", s->ns++);
-}
-
-void devicetomemory(struct ableInfo *s) {
-    chtype lin[64];
-    char lin8[64];
-    for (int k = 0; k < 16; k++) {
-        move(4 + k, 4);
-        inchnstr(lin, 64);
-        for (int kk = 0; kk < 64; kk++) lin8[kk] = (lin[kk] & 0x7f);
-        memmove(s->s[s->current] + 64*k, lin8, 64);
-    }
+    memset(s->s[s->ns++] + 64, ' ', 960);
+    addmessage(s, "1 screen added to block.");
 }
 
 void addscreen(struct ableInfo *s) {

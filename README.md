@@ -9,6 +9,8 @@ I could make gForth work with blocks by making
 the first line in the first screen start with "\\\\" (backslash backslash),
 the first line in all other screens start with "\\ " (backslash space).
 
+Still working on on working with gForth block editor.
+
 To load and interpret the block, just start gForth and issue
 
     use blocks.fb

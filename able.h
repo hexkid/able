@@ -18,7 +18,7 @@ void startcurses(void);
 void loadsource(struct ableInfo *s);
 void windowscreate(struct ableInfo *s);
 
-void rep(struct ableInfo *s);
+void repl(struct ableInfo *s);
 
 void windowsdestroy(struct ableInfo *s);
 void endcurses(void);

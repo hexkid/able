@@ -7,10 +7,7 @@ int main(int argc, char **argv) {
     startcurses();
     loadsource(s);
     windowscreate(s);
-    // REPL: loop part here
-    do {
-        rep(s);
-    } while (s->status != 2);
+    repl(s);
     windowsdestroy(s);
     endcurses();
 

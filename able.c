@@ -36,21 +36,6 @@ void loadsource(struct ableInfo *s) {
     s->cs = 0;
     FILE *f = fopen(s->srcname, "rb");
     if (f) {
-#if 0
-        memset(s->s, ' ', s->ms * sizeof *(s->s));
-        if (s->ms < 2) {
-            void *tmp = realloc(s->s, 2 * sizeof *(s->s));
-            if (!tmp) {
-                addmessage(s, "Not enough memory", 0);
-                s->status = 2;
-                return 1;
-            }
-            s->s = tmp;
-            s->ms = s->ns = 2;
-            memset(s->s, ' ', 2 * sizeof *(s->s));
-        }
-        return 1;
-#endif
         s->ns = 0;
         for (;;) {
             char tmp[1024];
@@ -59,23 +44,19 @@ void loadsource(struct ableInfo *s) {
             int n = fread(tmp, 1, 1024, f);
             if ((n > 0) && (errno == 0)) {
                 if (s->ns == s->ms) {
-                    void *stmp = realloc(s->s, ++s->ms * sizeof *(s->s));
-                    if (!stmp) {
-                        addmessage(s, "Not enough memory", 0);
-                        s->status = 2;
-                        fclose(f);
-                        return;
-                    }
-                    s->s = stmp;
+                    s->ms += 1;
+                    s->s = realloc(s->s, s->ms * 1024);
                 }
                 for (int k = 0; k < 1024; k++) {
                     if (tmp[k] < 32) tmp[k] = ' ';
                     if (tmp[k] > 0x7e) tmp[k] = ' ';
                 }
-                memcpy(s->s[s->ns++], tmp, 1024);
+                memmove(s->s[s->ns], tmp, 1024);
+                s->ns += 1;
             } else {
                 if (n > 0) {
-                    memcpy(s->s[s->ns], tmp, n);
+                    memmove(s->s[s->ns], tmp, n);
+                    s->ns += 1;
                     addmessage(s, "Error:", strerror(errno));
                 } else {
                     if (errno) {
@@ -169,10 +150,12 @@ void windowscreate(struct ableInfo *s) {
     update_winf(s);
 }
 
-void rep(struct ableInfo *s) {
-    refreshall(s);
-    int ch = wgetch((s->status == 0) ? s->wcmd : s->wedt);
-    processkey(s, ch);
+void repl(struct ableInfo *s) {
+    do {
+        refreshall(s);
+        int ch = wgetch((s->status == 0) ? s->wcmd : s->wedt);
+        processkey(s, ch);
+    } while (s->status != 2);
 }
 
 void windowsdestroy(struct ableInfo *s) {
@@ -214,14 +197,14 @@ void refresh_curpage(struct ableInfo *s) {
 }
 
 int addpage(struct ableInfo *s) {
-    void *tmp = realloc(s->s, (s->ns + 1) * sizeof *(s->s));
+    void *tmp = realloc(s->s, (s->ns + 1) * 1024);
     if (tmp == NULL) {
         addmessage(s, "Not enough memory");
         s->status = 0;
         return 1;
     }
     s->s = tmp;
-    memset(s->s[s->ns], ' ', sizeof *(s->s));
+    memset(s->s[s->ns], ' ', 1024);
     char stmp[65];
     time_t tt = time(0);
     struct tm t = *gmtime(&tt);
@@ -246,12 +229,12 @@ int edit(struct ableInfo *s) {
         move(s->edty, s->edtx);
     }
     if (ch == KEY_NPAGE) {
-        s->cs++;
+        s->cs += 1;
         if (s->cs == s->ns) addpage(s);
         refresh_curpage(s);
     }
     if (ch == KEY_PPAGE) {
-        if (s->cs) s->cs--;
+        if (s->cs) s->cs -= 1;
         refresh_curpage(s);
     }
     if ((ch >> 7) != 0) return 0; // ignore other 'special' keys
@@ -319,10 +302,10 @@ int addframe(struct ableInfo *s) {
 
 void newblock(struct ableInfo *s) {
     if (s->ms < 2) {
-        s->s = realloc(s->s, 2 * sizeof *(s->s)); // have faith, using few Ks
         s->ms = 2;
+        s->s = realloc(s->s, s->ms * 1024); // have faith, using few Ks
     }
-    memset(s->s, ' ', s->ms * sizeof *(s->s));
+    memset(s->s, ' ', s->ms * 1024);
     char title[65];
     time_t tt = time(0);
     struct tm t = *gmtime(&tt);
@@ -335,7 +318,8 @@ void newblock(struct ableInfo *s) {
 
 void newpage(struct ableInfo *s) {
     if (s->ns == s->ms) {
-        s->s = realloc(s->s, (++s->ms) * sizeof *(s->s)); // have faith, using few Ks
+        s->ms += 1;
+        s->s = realloc(s->s, s->ms * 1024); // have faith, using few Ks
     }
     char title[65];
     time_t tt = time(0);
@@ -344,7 +328,8 @@ void newpage(struct ableInfo *s) {
                    "                    %04d-%02d-%02d",
                    t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
     strncpy(s->s[s->ns], title, 64); // don't mind the absence of '\0'
-    memset(s->s[s->ns++] + 64, ' ', 960);
+    memset(s->s[s->ns] + 64, ' ', 960);
+    s->ns += 1;
     addmessage(s, "1 screen added to block.", 0);
 }
 
@@ -366,10 +351,12 @@ void initscreen(struct ableInfo *s, unsigned n) {
 
 void addscreen(struct ableInfo *s) {
     if (s->ns == s->ms) {
-        s->s = realloc(s->s, ++s->ms * sizeof *(s->s));
+        s->ms += 1;
+        s->s = realloc(s->s, s->ms * 1024);
         addmessage(s, "screen added", 0);
     }
-    memset(s->s[s->ns++], ' ', 1024);
+    memset(s->s[s->ns], ' ', 1024);
+    s->ns += 1;
     addmessage(s, "screen blanked", 0);
     update_wpge(s);
 }
@@ -392,12 +379,13 @@ void processkey(struct ableInfo *s, int ch) {
                         break;
 #endif
     if (ch == KEY_NPAGE) {
-        if (s->cs++ == s->ns) addscreen(s);
+        if (s->cs + 1 == s->ns) addscreen(s);
+        s->cs += 1;
         update_wpge(s);
         return;
     }
     if (ch == KEY_PPAGE) {
-        if (s->cs > 0) s->cs--;
+        if (s->cs > 0) s->cs -= 1;
         else           flash();
         update_wpge(s);
     }
@@ -413,15 +401,12 @@ void refreshall(struct ableInfo *s) {
     wnoutrefresh(s->wsrc);
     wnoutrefresh(s->wstt);
     wnoutrefresh(s->winf);
-    if (s->status == 0) {
-        wnoutrefresh(s->wedt);
-        wnoutrefresh(s->wcmd);
-        wmove(s->wcmd, s->cmdy, s->cmdx);
-    }
-    if (s->status == 1) {
-        wnoutrefresh(s->wcmd);
-        wnoutrefresh(s->wedt);
-        wmove(s->wedt, s->edty, s->edtx);
+    wnoutrefresh(s->wedt);
+    wnoutrefresh(s->wcmd);
+    switch (s->status) {
+        default: addmessage(s, "invalid state", 0); break;
+        case 0: wmove(s->wcmd, s->cmdy, s->cmdx); break;
+        case 1: wmove(s->wedt, s->edty, s->edtx); break;
     }
     doupdate();
 }

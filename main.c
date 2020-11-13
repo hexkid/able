@@ -2,17 +2,14 @@
 
 int main(int argc, char **argv) {
     struct ableInfo s[1] = { 0 };
-    s->major = 0;
-    s->minor = 2;
-    s->patch = 2;
-    setfname(s, (argc > 1) ? argv[1] : "blocks.fb");
+    setfname(s, (argc > 1) ? argv[1] : "blocks.fb"); // default name
 
     startcurses();
     loadsource(s);
     windowscreate(s);
+    // REPL: loop part here
     do {
-        refreshall(s);
-        rep(s);            // Read Eval Process... Loop is here
+        rep(s);
     } while (s->status != 2);
     windowsdestroy(s);
     endcurses();

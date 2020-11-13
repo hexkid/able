@@ -5,45 +5,31 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #include "able.h"
+#include "VERSION.h" // define (and document) semantic versioning
 
-#if 0
-struct ableInfo {
-    unsigned status;       // 0: command -- 1: edit -- 2: quit
-    char srcname[81];      // name of blocks file on disk
-    char (*s)[16][64];     // screens; not strings: no '\0'
-    unsigned ms, ns, cs;   // number of screens: allocated, used, current
-    unsigned edtx, edty;   // (x, y) for edit area
-    unsigned cmdx, cmdy;   // (x, y) for commad prompt (y is constant)
-    WINDOW *wpage, *wsource, *wedit;
-    WINDOW *wcmd, *wstatus, *winfo;
-};
-
-void loadsource(struct ableInfo *s);
-void windowscreate(struct ableInfo *s);
-
-void refreshall(struct ableInfo *s);
-void processkey(struct ableInfo *s, int ch);
-void saveblock(struct ableInfo *s);
-
-void windowsdestroy(struct ableInfo *s);
-#endif
-
-static void newblock(struct ableInfo *s);
-static void newpage(struct ableInfo *s);
-static void saveblock(struct ableInfo *s);
-static void addscreen(struct ableInfo *s);
 static void addmessage(struct ableInfo *s, const char *msg, const char *extra);
+static void initscreen(struct ableInfo *s, unsigned n);
+static void addscreen(struct ableInfo *s);
+static void processkey(struct ableInfo *s, int ch);
+static void refreshall(struct ableInfo *s);
+static void update_wpge(struct ableInfo *s);
+static void update_wsrc(struct ableInfo *s);
+static void update_wedt(struct ableInfo *s);
+static void update_wcmd(struct ableInfo *s);
+static void update_wstt(struct ableInfo *s);
+static void update_winf(struct ableInfo *s);
+
+void setfname(struct ableInfo *s, const char *fname) {
+    strcpy(s->srcname, fname);
+}
 
 void startcurses(void) {
     initscr();
     cbreak();
     noecho();
     start_color();
-}
-
-void setfname(struct ableInfo *s, const char *fname) {
-    strcpy(s->srcname, fname);
 }
 
 void loadsource(struct ableInfo *s) {
@@ -98,7 +84,7 @@ void loadsource(struct ableInfo *s) {
                         return;
                     } else {
                         fclose(f);
-                        addmessage(s, "incomplete final page");
+                        addmessage(s, "incomplete final page", 0);
                         return;
                     }
                 }
@@ -113,82 +99,6 @@ void loadsource(struct ableInfo *s) {
         s->ns = 2;
         s->cs = 0;
     }
-}
-
-void endcurses(void) {
-    move(25, 0);
-    endwin();
-}
-
-void initscreen(struct ableInfo *s, int n) {
-    while (n >= s->ms) addscreen(s);
-    memset(s->s[n], ' ', 1024);
-}
-
-void rep(struct ableInfo *s) {
-    if (s->status == 0) wmove(s->wcmd, s->cmdy, s->cmdx);
-    else                wmove(s->wedit, s->edity, s->editx);
-    int ch = wgetch((s->status == 0) ? s->wcmd : s->wedit);
-    processkey(s, ch);
-}
-
-void processkey(struct ableInfo *s, int ch) {
-#if 0
-                case 1: // command-line
-                        mvprintw(22, 6, "                        ");
-                        move(22, 6);
-                        echo();
-                        char cmd[25];
-                        getnstr(cmd, 24);
-                        docmd(s, cmd);
-                        break;
-                case 2: // editing
-                        mvprintw(22, 6, "Hit <TAB> for command   ");
-                        move(s->y, s->x);
-                        noecho();
-                        edit(s);
-                        break;
-#endif
-    if (ch == KEY_NPAGE) {
-        if (s->cs++ == s->ns) addscreen(s);
-        return;
-    }
-    if (ch == KEY_PPAGE) {
-        if (s->cs > 0) { s->cs--; }
-        else flash();
-    }
-    if (ch == 'Q') {
-        s->status = 2;
-    }
-    return;
-}
-
-void addmessage(struct ableInfo *s, const char *msg, const char *extra) {
-    wscrl(s->winfo, -1);
-    if (extra) {
-        mvwprintw(s->winfo, 0, 0, "%s %s", msg, extra);
-    } else {
-        mvwprintw(s->winfo, 0, 0, "%s", msg);
-    }
-}
-
-void refreshall(struct ableInfo *s) {
-    wnoutrefresh(stdscr);
-    wnoutrefresh(s->wpage);
-    wnoutrefresh(s->wsource);
-    wnoutrefresh(s->wstatus);
-    wnoutrefresh(s->winfo);
-    if (s->status == 0) {
-        wnoutrefresh(s->wedit);
-        wnoutrefresh(s->wcmd);
-        wmove(s->wcmd, s->cmdy, s->cmdx);
-    }
-    if (s->status == 1) {
-        wnoutrefresh(s->wcmd);
-        wnoutrefresh(s->wedit);
-        wmove(s->wedit, s->edity, s->editx);
-    }
-    doupdate();
 }
 
 void windowscreate(struct ableInfo *s) {
@@ -216,22 +126,21 @@ void windowscreate(struct ableInfo *s) {
     init_pair(22, COLOR_RED,     COLOR_YELLOW);
     init_pair(23, COLOR_WHITE,   COLOR_RED);
 
-    mvprintw(0, 3, s->title);
+    mvprintw(0, 3, "able - (A)nother (BL)ock (E)ditor - version %d.%d.%d",
+          VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
 
-    s->wpage = newwin(1, 20, 2, 3);
-    wbkgd(s->wpage, COLOR_PAIR(1));
-    mvwprintw(s->wpage, 0, 0, " screen #%d (%d/%d)   ", s->cs + 1, s->cs, s->ms);
+    s->wpge = newwin(1, 20, 2, 3);
+    wbkgd(s->wpge, COLOR_PAIR(1));
+    update_wpge(s);
 
-    s->wsource = newwin(1, 11, 2, 58);
-    wbkgd(s->wsource, COLOR_PAIR(1));
-    mvwprintw(s->wsource, 0, 0, "%11s          ", s->srcname);
+    s->wsrc = newwin(1, 11, 2, 58);
+    wbkgd(s->wsrc, COLOR_PAIR(1));
+    update_wsrc(s);
 
-    s->wedit = newwin(16, 64, 4, 4);
-    keypad(s->wedit, TRUE);
-    wbkgd(s->wedit, COLOR_PAIR(10));
-    for (int k = 0; k < 16; k++) {
-        mvwprintw(s->wedit, k, 0, "%.64s", s->s[s->cs] + 1024*k);
-    }
+    s->wedt = newwin(16, 64, 4, 4);
+    keypad(s->wedt, TRUE);
+    wbkgd(s->wedt, COLOR_PAIR(10));
+    update_wedt(s);
 
     mvaddch(3, 3, '+');
     mvhline(3, 4, '-', 64);
@@ -246,29 +155,44 @@ void windowscreate(struct ableInfo *s) {
     s->wcmd = newwin(1, 36, 21, 4);
     keypad(s->wcmd, TRUE);
     wbkgd(s->wcmd, COLOR_PAIR(13));
+    update_wcmd(s);
     mvaddch(21, 41, '<');
-    //mvwprintw(s->wcmd, 0, 0, "quit");
 
-    s->wstatus = newwin(1, 20, 21, 49);
-    wbkgd(s->wstatus, COLOR_PAIR(3));
-    //mvwprintw(s->wstatus, 0, 0, "wstatus 901234567890");
+    s->wstt = newwin(1, 20, 21, 49);
+    wbkgd(s->wstt, COLOR_PAIR(3));
+    update_wstt(s);
 
-    s->winfo = newwin(4, 80, 22, 0);
-    idlok(s->winfo, TRUE);
-    scrollok(s->winfo, TRUE);
-    wbkgd(s->winfo, COLOR_PAIR(23));
+    s->winf = newwin(4, 80, 22, 0);
+    idlok(s->winf, TRUE);
+    scrollok(s->winf, TRUE);
+    wbkgd(s->winf, COLOR_PAIR(23));
+    update_winf(s);
+}
 
-    refresh();
+void rep(struct ableInfo *s) {
+    refreshall(s);
+    int ch = wgetch((s->status == 0) ? s->wcmd : s->wedt);
+    processkey(s, ch);
 }
 
 void windowsdestroy(struct ableInfo *s) {
-    delwin(s->wpage); s->wpage = NULL;
-    delwin(s->wsource); s->wsource = NULL;
-    delwin(s->wedit); s->wedit = NULL;
+    delwin(s->wpge); s->wpge = NULL;
+    delwin(s->wsrc); s->wsrc = NULL;
+    delwin(s->wedt); s->wedt = NULL;
     delwin(s->wcmd); s->wcmd = NULL;
-    delwin(s->wstatus); s->wstatus = NULL;
-    delwin(s->winfo); s->winfo = NULL;
+    delwin(s->wstt); s->wstt = NULL;
+    delwin(s->winf); s->winf = NULL;
 }
+
+void endcurses(void) {
+    move(25, 0);
+    endwin();
+}
+
+#if 0
+static void newblock(struct ableInfo *s);
+static void newpage(struct ableInfo *s);
+static void saveblock(struct ableInfo *s);
 
 void saveblock(struct ableInfo *s) {
     if (s) return;
@@ -310,16 +234,16 @@ int addpage(struct ableInfo *s) {
 }
 
 int edit(struct ableInfo *s) {
-    move(s->edity, s->editx);
+    move(s->edty, s->edtx);
     unsigned ch = getch();
     mvprintw(24, 0, "key: 0x%04x        ", ch);
-    if ((ch == KEY_UP)    && (s->edity > 5))  move(--s->edity, s->editx);
-    if ((ch == KEY_DOWN)  && (s->edity < 20)) move(++s->edity, s->editx);
-    if ((ch == KEY_LEFT)  && (s->editx > 4))  move(s->edity, --s->editx);
-    if ((ch == KEY_RIGHT) && (s->editx < 67)) move(s->edity, ++s->editx);
-    if ((ch == KEY_BACKSPACE) && (s->editx > 4)) {
-        mvaddch(s->edity, --s->editx, ' ');
-        move(s->edity, s->editx);
+    if ((ch == KEY_UP)    && (s->edty > 5))  move(--s->edty, s->edtx);
+    if ((ch == KEY_DOWN)  && (s->edty < 20)) move(++s->edty, s->edtx);
+    if ((ch == KEY_LEFT)  && (s->edtx > 4))  move(s->edty, --s->edtx);
+    if ((ch == KEY_RIGHT) && (s->edtx < 67)) move(s->edty, ++s->edtx);
+    if ((ch == KEY_BACKSPACE) && (s->edtx > 4)) {
+        mvaddch(s->edty, --s->edtx, ' ');
+        move(s->edty, s->edtx);
     }
     if (ch == KEY_NPAGE) {
         s->cs++;
@@ -335,16 +259,16 @@ int edit(struct ableInfo *s) {
         s->status = 1;
     }
     if ((ch == '\n') || (ch == '\r')) {
-        s->editx = 4;
-        s->edity++;
-        if (s->edity == 21) s->edity = 5;
+        s->edtx = 4;
+        s->edty++;
+        if (s->edty == 21) s->edty = 5;
     }
     if (isgraph((unsigned char)ch) || (ch == ' ')) {
-        mvaddch(s->edity, s->editx++, ch);
-        if (s->editx == 68) {
-            s->editx = 4;
-            s->edity++;
-            if (s->edity == 21) s->edity = 5;
+        mvaddch(s->edty, s->edtx++, ch);
+        if (s->edtx == 68) {
+            s->edtx = 4;
+            s->edty++;
+            if (s->edty == 21) s->edty = 5;
         }
     }
     return 0;
@@ -421,12 +345,109 @@ void newpage(struct ableInfo *s) {
                    t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
     strncpy(s->s[s->ns], title, 64); // don't mind the absence of '\0'
     memset(s->s[s->ns++] + 64, ' ', 960);
-    addmessage(s, "1 screen added to block.");
+    addmessage(s, "1 screen added to block.", 0);
+}
+
+#endif
+
+void addmessage(struct ableInfo *s, const char *msg, const char *extra) {
+    wscrl(s->winf, -1);
+    if (extra && *extra) {
+        mvwprintw(s->winf, 0, 0, "%s %s", msg, extra);
+    } else {
+        mvwprintw(s->winf, 0, 0, "%s", msg);
+    }
+}
+
+void initscreen(struct ableInfo *s, unsigned n) {
+    while (n >= s->ms) addscreen(s);
+    memset(s->s[n], ' ', 1024);
 }
 
 void addscreen(struct ableInfo *s) {
     if (s->ns == s->ms) {
         s->s = realloc(s->s, ++s->ms * sizeof *(s->s));
+        addmessage(s, "screen added", 0);
     }
     memset(s->s[s->ns++], ' ', 1024);
+    addmessage(s, "screen blanked", 0);
+    update_wpge(s);
+}
+
+void processkey(struct ableInfo *s, int ch) {
+#if 0
+                case 1: // command-line
+                        mvprintw(22, 6, "                        ");
+                        move(22, 6);
+                        echo();
+                        char cmd[25];
+                        getnstr(cmd, 24);
+                        docmd(s, cmd);
+                        break;
+                case 2: // editing
+                        mvprintw(22, 6, "Hit <TAB> for command   ");
+                        move(s->y, s->x);
+                        noecho();
+                        edit(s);
+                        break;
+#endif
+    if (ch == KEY_NPAGE) {
+        if (s->cs++ == s->ns) addscreen(s);
+        update_wpge(s);
+        return;
+    }
+    if (ch == KEY_PPAGE) {
+        if (s->cs > 0) s->cs--;
+        else           flash();
+        update_wpge(s);
+    }
+    if (ch == 'Q') {
+        s->status = 2;
+    }
+    return;
+}
+
+void refreshall(struct ableInfo *s) {
+    wnoutrefresh(stdscr);
+    wnoutrefresh(s->wpge);
+    wnoutrefresh(s->wsrc);
+    wnoutrefresh(s->wstt);
+    wnoutrefresh(s->winf);
+    if (s->status == 0) {
+        wnoutrefresh(s->wedt);
+        wnoutrefresh(s->wcmd);
+        wmove(s->wcmd, s->cmdy, s->cmdx);
+    }
+    if (s->status == 1) {
+        wnoutrefresh(s->wcmd);
+        wnoutrefresh(s->wedt);
+        wmove(s->wedt, s->edty, s->edtx);
+    }
+    doupdate();
+}
+
+void update_wpge(struct ableInfo *s) {
+    mvwprintw(s->wpge, 0, 0, " screen #%d (%d/%d)   ", s->cs + 1, s->ns, s->ms);
+}
+
+void update_wsrc(struct ableInfo *s) {
+    mvwprintw(s->wsrc, 0, 0, "%11s          ", s->srcname);
+}
+
+void update_wedt(struct ableInfo *s) {
+    for (int k = 0; k < 16; k++) {
+        mvwprintw(s->wedt, k, 0, "%.64s", s->s[s->cs][k]);
+    }
+}
+
+void update_wcmd(struct ableInfo *s) {
+    mvwprintw(s->wcmd, 0, 0, " <TAB>        ");
+}
+
+void update_wstt(struct ableInfo *s) {
+    mvwprintw(s->wstt, 0, 0, " STATUS       ");
+}
+
+void update_winf(struct ableInfo *s) {
+    mvwprintw(s->winf, 0, 0, " STATUS       ");
 }

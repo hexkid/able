@@ -24,7 +24,7 @@ main.o: main.c
 	$(CC) $(CFLAGS) $(WFLAGS) $(OFLAGS) $(FFLAGS) \
 	-o main.o -c main.c
 
-able.o: able.c able.h
+able.o: able.c able.h VERSION.h
 	$(CC) $(CFLAGS) $(WFLAGS) $(OFLAGS) $(FFLAGS) \
 	-o able.o -c able.c
 

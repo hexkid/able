@@ -412,6 +412,9 @@ void refreshall(struct ableInfo *s) {
 }
 
 void update_wpge(struct ableInfo *s) {
+    for (int k = 0; k < 16; k++) {
+        mvwprintw(s->wedt, k, 0, "%.64s", s->s[s->cs][k]);
+    }
     mvwprintw(s->wpge, 0, 0, " screen #%d (%d/%d)   ", s->cs + 1, s->ns, s->ms);
 }
 

@@ -1,11 +1,13 @@
 // semantic versioning @ https://semver.org/
 
 #define VERSION_MAJOR 0      // incompatible API changes (or whenever)
-#define VERSION_MINOR 3      // added backwards compatible functionality
-#define VERSION_PATCH 3      // backwards compatible bug fixes
-#define VERSION_BUILD 52     // manual update after compile (unless forgotten)
+#define VERSION_MINOR 4      // added backwards compatible functionality
+#define VERSION_PATCH 1      // backwards compatible bug fixes
+#define VERSION_BUILD 53     // manual update after compile (unless forgotten)
 
 #if 0
+version 0.4.1 *** 2020-11-13
+PAGE UP/PAGE DOWN keep the content updated.
 
 version 0.3.2 *** 2020-11-13
 Infos scroll downwards.

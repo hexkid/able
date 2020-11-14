@@ -393,8 +393,22 @@ void docmd(struct ableInfo *s) {
 }
 
 void cmdkey(struct ableInfo *s, int ch) {
-    (void)s;
-    (void)ch;
+    if ((32 <= ch) && (ch <= 126)) {
+        mvwaddch(s->wcmd, s->cmdy, s->cmdx++, ch);
+    } else {
+        if ((ch == '\n') || (ch == '\r')) {
+            docmd(s);
+            wclear(s->wcmd);
+            s->cmdx = s->cmdy = 0;
+        } else {
+            if ((ch == KEY_BACKSPACE) || (ch == '\b')) {
+                mvwaddch(s->wcmd, s->cmdy, --s->cmdx, ' ');
+                wmove(s->wcmd, s->cmdy, s->cmdx);
+            } else {
+                flash();
+            }
+        }
+    }
 }
 
 void edtkey(struct ableInfo *s, int ch) {
@@ -435,10 +449,6 @@ void processkey(struct ableInfo *s, int ch) {
     }
     if (ch == '\t') {
         s->status = 1 - s->status;
-        return;
-    }
-    if (((ch == '\n') || (ch == '\r')) && (s->status == 0)) {
-        docmd(s);
         return;
     }
     mvwprintw(s->winf, 0, 0, "got key %04X (%c)   ", ch, ((ch >= 32) && (ch <= 126)) ? ch : ' ');

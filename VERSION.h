@@ -2,10 +2,13 @@
 
 #define VERSION_MAJOR 0      // incompatible API changes (or whenever)
 #define VERSION_MINOR 6      // added backwards compatible functionality
-#define VERSION_PATCH 1      // backwards compatible bug fixes
-#define VERSION_BUILD 61     // manual update after compile (unless forgotten)
+#define VERSION_PATCH 2      // backwards compatible bug fixes
+#define VERSION_BUILD 62     // manual update after compile (unless forgotten)
 
 #if 0
+version 0.6.2 *** 2020-11-14
+command is being born
+
 version 0.6.1 *** 2020-11-14
 added <TAB> switching
 

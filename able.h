@@ -1,8 +1,6 @@
 #ifndef ABLE_H_INCLUDED
 #define ABLE_H_INCLUDED
 
-#include <ncurses.h>
-
 struct ableInfo;                                    // defined in able.c
 
 void setfname(struct ableInfo *s, const char *fname);

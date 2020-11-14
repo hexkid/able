@@ -13,4 +13,6 @@ void repl(struct ableInfo *s);
 void windowsdestroy(struct ableInfo *s);
 void endcurses(void);
 
+void delinfo(struct ableInfo *s);
+
 #endif

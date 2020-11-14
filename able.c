@@ -15,7 +15,7 @@ struct ableInfo {
     char (*s)[16][64];       // screens, not strings: no '\0'
     unsigned ms, ns, cs;     // number of screens: allocated, used, current
     unsigned edtx, edty;     // (x, y) for edit area
-    unsigned cmdx, cmdy;     // (x, y) for commad prompt (y is constant)
+    unsigned cmdx, cmdy;     // (x, y) for commad prompt (y is constant 0)
     WINDOW *wpge, *wsrc, *wedt, *wcmd, *wstt, *winf;
 };
 
@@ -134,6 +134,11 @@ void windowsdestroy(struct ableInfo *s) {
 void endcurses(void) {
     move(25, 0);
     endwin();
+}
+
+void delinfo(struct ableInfo *s) {
+    free(s->s);
+    free(s);
 }
 
 #if 0

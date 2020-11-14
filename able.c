@@ -347,6 +347,7 @@ void windowscreate(struct ableInfo *s) {
     scrollok(s->winf, TRUE);
     wbkgd(s->winf, COLOR_PAIR(23));
     update_winf(s);
+    refreshall(s);
 }
 
 void windowsdestroy(struct ableInfo *s) {
@@ -405,15 +406,30 @@ void processkey(struct ableInfo *s, int ch) {
         if (s->cs + 1 == s->ns) addscreen(s);
         s->cs += 1;
         update_wpge(s);
+        update_wedt(s);
         return;
     }
     if (ch == KEY_PPAGE) {
         if (s->cs > 0) s->cs -= 1;
         else           flash();
         update_wpge(s);
+        update_wedt(s);
+        return;
     }
-    if (ch == 'Q') {
+    if (ch == '\t') {
+        s->status = 1 - s->status;
+        return;
+    }
+    switch (s->status) {
+        default: break;
+        case 0: /* command window */
+                break;
+        case 1: /* edit window */
+                break;
+    }
+    if ((s->status == 0) && (ch == 'Q')) {
         s->status = 2;
+        return;
     }
     return;
 }

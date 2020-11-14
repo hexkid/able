@@ -25,6 +25,9 @@ static void windowsdestroy(struct ableInfo *s);
 static void addmessage(struct ableInfo *s, const char *msg, const char *extra);
 static void initscreen(struct ableInfo *s, unsigned n);
 static void addscreen(struct ableInfo *s);
+static void docmd(struct ableInfo *s);
+static void cmdkey(struct ableInfo *s, int ch);
+static void edtkey(struct ableInfo *s, int ch);
 static void processkey(struct ableInfo *s, int ch);
 static void refreshall(struct ableInfo *s);
 static void update_wpge(struct ableInfo *s);
@@ -385,6 +388,20 @@ void addscreen(struct ableInfo *s) {
     update_wpge(s);
 }
 
+void docmd(struct ableInfo *s) {
+    (void)s;
+}
+
+void cmdkey(struct ableInfo *s, int ch) {
+    (void)s;
+    (void)ch;
+}
+
+void edtkey(struct ableInfo *s, int ch) {
+    (void)s;
+    (void)ch;
+}
+
 void processkey(struct ableInfo *s, int ch) {
 #if 0
                 case 1: // command-line
@@ -420,11 +437,18 @@ void processkey(struct ableInfo *s, int ch) {
         s->status = 1 - s->status;
         return;
     }
+    if (((ch == '\n') || (ch == '\r')) && (s->status == 0)) {
+        docmd(s);
+        return;
+    }
+    mvwprintw(s->winf, 0, 0, "got key %04X (%c)   ", ch, ((ch >= 32) && (ch <= 126)) ? ch : ' ');
     switch (s->status) {
         default: break;
         case 0: /* command window */
+                cmdkey(s, ch);
                 break;
         case 1: /* edit window */
+                edtkey(s, ch);
                 break;
     }
     if ((s->status == 0) && (ch == 'Q')) {

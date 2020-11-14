@@ -3,7 +3,7 @@
 #define VERSION_MAJOR 0      // incompatible API changes (or whenever)
 #define VERSION_MINOR 6      // added backwards compatible functionality
 #define VERSION_PATCH 1      // backwards compatible bug fixes
-#define VERSION_BUILD 60     // manual update after compile (unless forgotten)
+#define VERSION_BUILD 61     // manual update after compile (unless forgotten)
 
 #if 0
 version 0.6.1 *** 2020-11-14

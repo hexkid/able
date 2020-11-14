@@ -20,6 +20,8 @@ struct ableInfo {
 };
 
 static void loadsource(struct ableInfo *s);
+static void windowscreate(struct ableInfo *s);
+static void windowsdestroy(struct ableInfo *s);
 static void addmessage(struct ableInfo *s, const char *msg, const char *extra);
 static void initscreen(struct ableInfo *s, unsigned n);
 static void addscreen(struct ableInfo *s);
@@ -39,79 +41,12 @@ struct ableInfo *newinfo(const char *fname) {
     return ret;
 }
 
-void startcurses(void) {
+void startcurses(struct ableInfo *s) {
     initscr();
     cbreak();
     noecho();
     start_color();
-}
-
-void windowscreate(struct ableInfo *s) {
-    init_pair( 1, COLOR_WHITE,   COLOR_BLACK);
-    init_pair( 2, COLOR_CYAN,    COLOR_BLACK);
-    init_pair( 3, COLOR_GREEN,   COLOR_BLACK);
-    init_pair( 4, COLOR_YELLOW,  COLOR_BLACK);
-    init_pair( 5, COLOR_BLACK,   COLOR_WHITE);
-    init_pair( 6, COLOR_MAGENTA, COLOR_WHITE);
-    init_pair( 7, COLOR_BLUE,    COLOR_WHITE);
-    init_pair( 8, COLOR_RED,     COLOR_WHITE);
-    init_pair( 9, COLOR_WHITE,   COLOR_MAGENTA);
-    init_pair(10, COLOR_WHITE,   COLOR_BLUE);
-    init_pair(11, COLOR_CYAN,    COLOR_BLUE);
-    init_pair(12, COLOR_GREEN,   COLOR_BLUE);
-    init_pair(13, COLOR_YELLOW,  COLOR_BLUE);
-    init_pair(14, COLOR_BLACK,   COLOR_CYAN);
-    init_pair(15, COLOR_BLUE,    COLOR_CYAN);
-    init_pair(16, COLOR_RED,     COLOR_CYAN);
-    init_pair(17, COLOR_BLACK,   COLOR_GREEN);
-    init_pair(18, COLOR_BLUE,    COLOR_GREEN);
-    init_pair(19, COLOR_BLACK,   COLOR_YELLOW);
-    init_pair(20, COLOR_MAGENTA, COLOR_YELLOW);
-    init_pair(21, COLOR_BLUE,    COLOR_YELLOW);
-    init_pair(22, COLOR_RED,     COLOR_YELLOW);
-    init_pair(23, COLOR_WHITE,   COLOR_RED);
-
-    mvprintw(0, 3, "able - (A)nother (BL)ock (E)ditor - version %d.%d.%d",
-          VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
-
-    s->wpge = newwin(1, 20, 2, 3);
-    wbkgd(s->wpge, COLOR_PAIR(1));
-    update_wpge(s);
-
-    s->wsrc = newwin(1, 11, 2, 58);
-    wbkgd(s->wsrc, COLOR_PAIR(1));
-    update_wsrc(s);
-
-    s->wedt = newwin(16, 64, 4, 4);
-    keypad(s->wedt, TRUE);
-    wbkgd(s->wedt, COLOR_PAIR(10));
-    update_wedt(s);
-
-    mvaddch(3, 3, '+');
-    mvhline(3, 4, '-', 64);
-    mvaddch(3, 68, '+');
-    for (int k = 0; k < 16; k++) mvprintw(k + 4, 1, "%2d|", k);
-    for (int k = 0; k < 16; k++) mvaddch(k + 4, 68, '|');
-    mvaddch(20, 3, '+');
-    mvhline(20, 4, '-', 64);
-    mvaddch(20, 68, '+');
-
-    mvaddch(21, 2, '>');
-    s->wcmd = newwin(1, 36, 21, 4);
-    keypad(s->wcmd, TRUE);
-    wbkgd(s->wcmd, COLOR_PAIR(13));
-    update_wcmd(s);
-    mvaddch(21, 41, '<');
-
-    s->wstt = newwin(1, 20, 21, 49);
-    wbkgd(s->wstt, COLOR_PAIR(3));
-    update_wstt(s);
-
-    s->winf = newwin(4, 80, 22, 0);
-    idlok(s->winf, TRUE);
-    scrollok(s->winf, TRUE);
-    wbkgd(s->winf, COLOR_PAIR(23));
-    update_winf(s);
+    windowscreate(s);
 }
 
 void repl(struct ableInfo *s) {
@@ -122,16 +57,8 @@ void repl(struct ableInfo *s) {
     } while (s->status != 2);
 }
 
-void windowsdestroy(struct ableInfo *s) {
-    delwin(s->wpge); s->wpge = NULL;
-    delwin(s->wsrc); s->wsrc = NULL;
-    delwin(s->wedt); s->wedt = NULL;
-    delwin(s->wcmd); s->wcmd = NULL;
-    delwin(s->wstt); s->wstt = NULL;
-    delwin(s->winf); s->winf = NULL;
-}
-
-void endcurses(void) {
+void endcurses(struct ableInfo *s) {
+    windowsdestroy(s);
     move(25, 0);
     endwin();
 }
@@ -352,6 +279,83 @@ void loadsource(struct ableInfo *s) {
         s->ns = 2;
         s->cs = 0;
     }
+}
+
+void windowscreate(struct ableInfo *s) {
+    init_pair( 1, COLOR_WHITE,   COLOR_BLACK);
+    init_pair( 2, COLOR_CYAN,    COLOR_BLACK);
+    init_pair( 3, COLOR_GREEN,   COLOR_BLACK);
+    init_pair( 4, COLOR_YELLOW,  COLOR_BLACK);
+    init_pair( 5, COLOR_BLACK,   COLOR_WHITE);
+    init_pair( 6, COLOR_MAGENTA, COLOR_WHITE);
+    init_pair( 7, COLOR_BLUE,    COLOR_WHITE);
+    init_pair( 8, COLOR_RED,     COLOR_WHITE);
+    init_pair( 9, COLOR_WHITE,   COLOR_MAGENTA);
+    init_pair(10, COLOR_WHITE,   COLOR_BLUE);
+    init_pair(11, COLOR_CYAN,    COLOR_BLUE);
+    init_pair(12, COLOR_GREEN,   COLOR_BLUE);
+    init_pair(13, COLOR_YELLOW,  COLOR_BLUE);
+    init_pair(14, COLOR_BLACK,   COLOR_CYAN);
+    init_pair(15, COLOR_BLUE,    COLOR_CYAN);
+    init_pair(16, COLOR_RED,     COLOR_CYAN);
+    init_pair(17, COLOR_BLACK,   COLOR_GREEN);
+    init_pair(18, COLOR_BLUE,    COLOR_GREEN);
+    init_pair(19, COLOR_BLACK,   COLOR_YELLOW);
+    init_pair(20, COLOR_MAGENTA, COLOR_YELLOW);
+    init_pair(21, COLOR_BLUE,    COLOR_YELLOW);
+    init_pair(22, COLOR_RED,     COLOR_YELLOW);
+    init_pair(23, COLOR_WHITE,   COLOR_RED);
+
+    mvprintw(0, 3, "able - (A)nother (BL)ock (E)ditor - version %d.%d.%d",
+          VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH);
+
+    s->wpge = newwin(1, 20, 2, 3);
+    wbkgd(s->wpge, COLOR_PAIR(1));
+    update_wpge(s);
+
+    s->wsrc = newwin(1, 11, 2, 58);
+    wbkgd(s->wsrc, COLOR_PAIR(1));
+    update_wsrc(s);
+
+    s->wedt = newwin(16, 64, 4, 4);
+    keypad(s->wedt, TRUE);
+    wbkgd(s->wedt, COLOR_PAIR(10));
+    update_wedt(s);
+
+    mvaddch(3, 3, '+');
+    mvhline(3, 4, '-', 64);
+    mvaddch(3, 68, '+');
+    for (int k = 0; k < 16; k++) mvprintw(k + 4, 1, "%2d|", k);
+    for (int k = 0; k < 16; k++) mvaddch(k + 4, 68, '|');
+    mvaddch(20, 3, '+');
+    mvhline(20, 4, '-', 64);
+    mvaddch(20, 68, '+');
+
+    mvaddch(21, 2, '>');
+    s->wcmd = newwin(1, 36, 21, 4);
+    keypad(s->wcmd, TRUE);
+    wbkgd(s->wcmd, COLOR_PAIR(13));
+    update_wcmd(s);
+    mvaddch(21, 41, '<');
+
+    s->wstt = newwin(1, 20, 21, 49);
+    wbkgd(s->wstt, COLOR_PAIR(3));
+    update_wstt(s);
+
+    s->winf = newwin(4, 80, 22, 0);
+    idlok(s->winf, TRUE);
+    scrollok(s->winf, TRUE);
+    wbkgd(s->winf, COLOR_PAIR(23));
+    update_winf(s);
+}
+
+void windowsdestroy(struct ableInfo *s) {
+    delwin(s->wpge); s->wpge = NULL;
+    delwin(s->wsrc); s->wsrc = NULL;
+    delwin(s->wedt); s->wedt = NULL;
+    delwin(s->wcmd); s->wcmd = NULL;
+    delwin(s->wstt); s->wstt = NULL;
+    delwin(s->winf); s->winf = NULL;
 }
 
 void addmessage(struct ableInfo *s, const char *msg, const char *extra) {

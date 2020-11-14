@@ -2,11 +2,9 @@
 
 int main(int argc, char **argv) {
     struct ableInfo *s = newinfo((argc > 1) ? argv[1] : "blocks.fb");
-    startcurses();
-    windowscreate(s);
+    startcurses(s);
     repl(s);
-    windowsdestroy(s);
-    endcurses();
+    endcurses(s);
     delinfo(s);
     return 0;
 }

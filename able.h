@@ -3,9 +3,9 @@
 
 struct ableInfo;                                    // defined in able.c
 
-void setfname(struct ableInfo *s, const char *fname);
+struct ableInfo *newinfo(const char *fname);
+
 void startcurses(void);
-void loadsource(struct ableInfo *s);
 void windowscreate(struct ableInfo *s);
 
 void repl(struct ableInfo *s);

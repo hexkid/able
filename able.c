@@ -19,6 +19,7 @@ struct ableInfo {
     WINDOW *wpge, *wsrc, *wedt, *wcmd, *wstt, *winf;
 };
 
+static void loadsource(struct ableInfo *s);
 static void addmessage(struct ableInfo *s, const char *msg, const char *extra);
 static void initscreen(struct ableInfo *s, unsigned n);
 static void addscreen(struct ableInfo *s);
@@ -31,8 +32,11 @@ static void update_wcmd(struct ableInfo *s);
 static void update_wstt(struct ableInfo *s);
 static void update_winf(struct ableInfo *s);
 
-void setfname(struct ableInfo *s, const char *fname) {
-    strcpy(s->srcname, fname);
+struct ableInfo *newinfo(const char *fname) {
+    struct ableInfo *ret = calloc(1, sizeof *ret);
+    strcpy(ret->srcname, fname);
+    loadsource(ret);
+    return ret;
 }
 
 void startcurses(void) {
@@ -40,56 +44,6 @@ void startcurses(void) {
     cbreak();
     noecho();
     start_color();
-}
-
-void loadsource(struct ableInfo *s) {
-    s->cs = 0;
-    FILE *f = fopen(s->srcname, "rb");
-    if (f) {
-        s->ns = 0;
-        for (;;) {
-            char tmp[1024];
-            memset(tmp, ' ', 1024);
-            errno = 0;
-            int n = fread(tmp, 1, 1024, f);
-            if ((n > 0) && (errno == 0)) {
-                if (s->ns == s->ms) {
-                    s->ms += 1;
-                    s->s = realloc(s->s, s->ms * 1024);
-                }
-                for (int k = 0; k < 1024; k++) {
-                    if (tmp[k] < 32) tmp[k] = ' ';
-                    if (tmp[k] > 0x7e) tmp[k] = ' ';
-                }
-                memmove(s->s[s->ns], tmp, 1024);
-                s->ns += 1;
-            } else {
-                if (n > 0) {
-                    memmove(s->s[s->ns], tmp, n);
-                    s->ns += 1;
-                    addmessage(s, "Error:", strerror(errno));
-                } else {
-                    if (errno) {
-                        addmessage(s, "Error:", strerror(errno));
-                        fclose(f);
-                        return;
-                    } else {
-                        fclose(f);
-                        addmessage(s, "incomplete final page", 0);
-                        return;
-                    }
-                }
-                s->status = 2;
-                fclose(f);
-                return;
-            }
-        }
-    } else {
-        initscreen(s, 0);
-        initscreen(s, 1);
-        s->ns = 2;
-        s->cs = 0;
-    }
 }
 
 void windowscreate(struct ableInfo *s) {
@@ -345,6 +299,56 @@ void newpage(struct ableInfo *s) {
 
 #endif
 
+void loadsource(struct ableInfo *s) {
+    s->cs = 0;
+    FILE *f = fopen(s->srcname, "rb");
+    if (f) {
+        s->ns = 0;
+        for (;;) {
+            char tmp[1024];
+            memset(tmp, ' ', 1024);
+            errno = 0;
+            int n = fread(tmp, 1, 1024, f);
+            if ((n > 0) && (errno == 0)) {
+                if (s->ns == s->ms) {
+                    s->ms += 1;
+                    s->s = realloc(s->s, s->ms * 1024);
+                }
+                for (int k = 0; k < 1024; k++) {
+                    if (tmp[k] < 32) tmp[k] = ' ';
+                    if (tmp[k] > 0x7e) tmp[k] = ' ';
+                }
+                memmove(s->s[s->ns], tmp, 1024);
+                s->ns += 1;
+            } else {
+                if (n > 0) {
+                    memmove(s->s[s->ns], tmp, n);
+                    s->ns += 1;
+                    addmessage(s, "Error:", strerror(errno));
+                } else {
+                    if (errno) {
+                        addmessage(s, "Error:", strerror(errno));
+                        fclose(f);
+                        return;
+                    } else {
+                        fclose(f);
+                        addmessage(s, "incomplete final page", 0);
+                        return;
+                    }
+                }
+                s->status = 2;
+                fclose(f);
+                return;
+            }
+        }
+    } else {
+        initscreen(s, 0);
+        initscreen(s, 1);
+        s->ns = 2;
+        s->cs = 0;
+    }
+}
+
 void addmessage(struct ableInfo *s, const char *msg, const char *extra) {
     wscrl(s->winf, 1);
     if (extra && *extra) {
@@ -447,5 +451,5 @@ void update_wstt(struct ableInfo *s) {
 }
 
 void update_winf(struct ableInfo *s) {
-    mvwprintw(s->winf, 0, 0, " STATUS       ");
+    mvwprintw(s->winf, 3, 0, "Press <TAB> to switch input area");
 }

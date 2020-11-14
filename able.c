@@ -9,6 +9,16 @@
 #include "able.h"
 #include "VERSION.h" // define (and document) semantic versioning
 
+struct ableInfo {
+    unsigned status;         // 0: command -- 1: edit -- 2: quit
+    char srcname[81];        // name of blocks file on disk
+    char (*s)[16][64];       // screens, not strings: no '\0'
+    unsigned ms, ns, cs;     // number of screens: allocated, used, current
+    unsigned edtx, edty;     // (x, y) for edit area
+    unsigned cmdx, cmdy;     // (x, y) for commad prompt (y is constant)
+    WINDOW *wpge, *wsrc, *wedt, *wcmd, *wstt, *winf;
+};
+
 static void addmessage(struct ableInfo *s, const char *msg, const char *extra);
 static void initscreen(struct ableInfo *s, unsigned n);
 static void addscreen(struct ableInfo *s);

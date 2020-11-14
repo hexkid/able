@@ -2,10 +2,13 @@
 
 #define VERSION_MAJOR 0      // incompatible API changes (or whenever)
 #define VERSION_MINOR 4      // added backwards compatible functionality
-#define VERSION_PATCH 1      // backwards compatible bug fixes
-#define VERSION_BUILD 53     // manual update after compile (unless forgotten)
+#define VERSION_PATCH 2      // backwards compatible bug fixes
+#define VERSION_BUILD 54     // manual update after compile (unless forgotten)
 
 #if 0
+version 0.4.2 *** 2020-11-14
+moved struct definition out of the public header file.
+
 version 0.4.1 *** 2020-11-13
 PAGE UP/PAGE DOWN keep the content updated.
 
